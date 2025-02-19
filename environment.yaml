@@ -1,0 +1,9 @@
+name: external-odc-products-py-env
+dependencies:
+  - python == 3.12.3
+  - gdal == 3.10.0
+  - pip
+  - pip:
+    - -r https://raw.githubusercontent.com/digitalearthafrica/deafrica-sandbox/refs/tags/0.0.9/docker/requirements.txt
+    - -e .[lint]
+    - pip-tools

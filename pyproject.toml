@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "external-odc-products-py"
+version = "0.0.1"
+requires-python = ">= 3.9"
+dependencies= [
+    "aiobotocore[boto3,awscli]",
+    "click",
+    "datacube==1.8.20",
+    "eodatasets3",
+    "fsspec[full]",
+    "gcsfs",
+    "geopandas",
+    "odc-cloud[ASYNC]",
+    "pandas==2.1.4", # due to sqalchemy dependency for datacube 1.8.x
+    "pyyaml",
+    "rasterio",
+    "rioxarray",
+    "tqdm"    
+]
+
+[project.optional-dependencies]
+lint = [
+    "black[jupyter]",
+    "flake8",
+    "isort>=5.0.0",
+    "pre-commit",
+]
+
+[project.scripts]
+create-stac-files = "external_odc_products_py.stac:create_stac_files"
+get-storage-parameters = "external_odc_products_py.storage_parameters:get_storage_parameters"
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 100
+extend-exclude = '''
+src/external_odc_products_py/eo3assemble/easi_prepare_template\.py
+'''
