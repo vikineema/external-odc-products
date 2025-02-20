@@ -9,7 +9,7 @@ metadata:
     name: wapor_monthly_npp
 
 measurements:
-  - name: "relative_soil_moisture"
+  - name: "net_primary_production"
     dtype: int32
     nodata: -9999
     units: "gC/m²/month"
