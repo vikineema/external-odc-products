@@ -102,7 +102,7 @@ def create_stac_files(
         if product_name.startswith("wapor"):
             if product_name == "wapor_soil_moisture":
                 mapset_code = "L2-RSM-D"
-            if product_name == "wapor_monthly_npp":
+            elif product_name == "wapor_monthly_npp":
                 mapset_code = "L2-NPP-M"
             geotiffs = wapor_v3.get_mapset_rasters(mapset_code)
             # Use a gsutil URI instead of the the public URL

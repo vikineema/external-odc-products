@@ -48,7 +48,7 @@ def get_storage_parameters(
         if product_name.startswith("wapor"):
             if product_name == "wapor_soil_moisture":
                 mapset_code = "L2-RSM-D"
-            if product_name == "wapor_monthly_npp":
+            elif product_name == "wapor_monthly_npp":
                 mapset_code = "L2-NPP-M"
             geotiffs_file_paths = get_mapset_rasters(mapset_code)
             # Use a gsutil URI instead of the the public URL
