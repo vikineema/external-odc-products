@@ -26,6 +26,7 @@ up: ## Bring up your Docker environment
 	# make fix-file-permissions
 	docker compose up -d explorer
 	make init
+	make add-products
 
 down:
 	docker compose down --remove-orphans
@@ -36,9 +37,17 @@ logs:
 shell:
 	docker compose exec jupyter bash -c "cd /home/jovyan/workspace && exec bash"
 
+add-products:
+	docker compose exec jupyter bash -c "cd /home/jovyan/workspace && bash workflows/add_products.sh products"
+
 create-stac-wapor_soil_moisture:
 	create-stac-files \
 	 --product-name="wapor_soil_moisture" \
 	 --product-yaml="products/wapor_soil_moisture.odc-product.yaml" \
 	 --stac-output-dir="s3://wapor-v3/wapor_soil_moisture/" \
 	 --overwrite
+
+get-storage-parameters:
+	get-storage-parameters \
+	--product-name="wapor_monthly_npp" \
+	--output-dir="tmp/storage_parameters/" 
