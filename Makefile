@@ -1,5 +1,6 @@
 #!make
 SHELL := /usr/bin/env bash
+export GS_NO_SIGN_REQUEST := YES
 
 build:
 	docker compose build

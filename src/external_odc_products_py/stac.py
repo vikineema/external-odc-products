@@ -67,8 +67,6 @@ def create_stac_files(
 
     if is_s3_path(metadata_output_dir):
         raise RuntimeError("Metadata files require to be written to a local directory")
-    else:
-        metadata_output_dir = Path(metadata_output_dir).resolve()
 
     if not check_directory_exists(metadata_output_dir):
         fs = get_filesystem(metadata_output_dir, anon=False)
@@ -79,17 +77,12 @@ def create_stac_files(
     if not is_s3_path(product_yaml):
         if is_url(product_yaml):
             product_yaml = download_product_yaml(product_yaml)
-        else:
-            product_yaml = Path(product_yaml).resolve()
     else:
         NotImplemented("Product yaml is expected to be a local file or url not s3 path")
 
     # Directory to write the stac files to
     if product_name not in os.path.basename(stac_output_dir.rstrip("/")):
         stac_output_dir = os.path.join(stac_output_dir, product_name)
-
-    if not is_s3_path(stac_output_dir):
-        stac_output_dir = Path(stac_output_dir).resolve()
 
     if not check_directory_exists(stac_output_dir):
         fs = get_filesystem(stac_output_dir, anon=False)
@@ -121,7 +114,7 @@ def create_stac_files(
         # File system Path() to the dataset
         # or gsutil URI prefix  (gs://bucket/key) to the dataset.
         if not is_s3_path(geotiff) and not is_gcsfs_path(geotiff):
-            dataset_path = Path(geotiff)
+            dataset_path = Path(geotiff).resolve()
         else:
             dataset_path = geotiff
 
