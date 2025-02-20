@@ -88,6 +88,9 @@ def create_stac_files(
         NotImplemented("Product yaml is expected to be a local file or url not s3 path")
 
     # Directory to write the stac files to
+    if product_name not in os.path.basename(stac_output_dir.rstrip("/")):
+        stac_output_dir = os.path.join(stac_output_dir, product_name)
+
     if not is_s3_path(stac_output_dir):
         stac_output_dir = Path(stac_output_dir).resolve()
 
