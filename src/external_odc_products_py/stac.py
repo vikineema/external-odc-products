@@ -54,7 +54,12 @@ def create_stac_files(
 ):
 
     # Validate products
-    valid_product_names = ["iwmi_blue_et_monthly", "iwmi_green_et_monthly", "wapor_soil_moisture"]
+    valid_product_names = [
+        "iwmi_blue_et_monthly",
+        "iwmi_green_et_monthly",
+        "wapor_soil_moisture",
+        "wapor_monthly_npp",
+    ]
     if product_name not in valid_product_names:
         raise NotImplementedError(
             f"Stac file generation has not been implemented for {product_name}"
@@ -97,7 +102,8 @@ def create_stac_files(
         if product_name.startswith("wapor"):
             if product_name == "wapor_soil_moisture":
                 mapset_code = "L2-RSM-D"
-
+            if product_name == "wapor_monthly_npp":
+                mapset_code = "L2-NPP-M"
             geotiffs = wapor_v3.get_mapset_rasters(mapset_code)
             # Use a gsutil URI instead of the the public URL
             geotiffs = [i.replace("https://storage.googleapis.com/", "gs://") for i in geotiffs]

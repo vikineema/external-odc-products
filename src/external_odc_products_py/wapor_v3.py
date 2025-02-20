@@ -98,7 +98,7 @@ def get_mapset_rasters(wapor_v3_mapset_code: str) -> list[str]:
 
 def get_dekad(year: str | int, month: str | int, dekad_label: str) -> tuple:
     """
-    Get the end date of the dekad that a date belongs to and the time range
+    Get the start date of the dekad that a date belongs to and the time range
     for the dekad.
     Every month has three dekads, such that the first two dekads
     have 10 days (i.e., 1-10, 11-20), and the third is comprised of the
@@ -117,7 +117,7 @@ def get_dekad(year: str | int, month: str | int, dekad_label: str) -> tuple:
     Returns
     -------
     tuple
-        The end date of the dekad and the time range for the dekad.
+        The start date of the dekad and the time range for the dekad.
     """
     if isinstance(year, str):
         year = int(year)
@@ -132,19 +132,50 @@ def get_dekad(year: str | int, month: str | int, dekad_label: str) -> tuple:
         start=first_day, end=last_day, freq="10D", inclusive="left"
     )
     if dekad_label == "D1":
-        input_datetime = (d2_start_date - relativedelta(days=1)).to_pydatetime()
         start_datetime = d1_start_date.to_pydatetime()
-        end_datetime = input_datetime.replace(hour=23, minute=59, second=59)
+        end_datetime = (d2_start_date - relativedelta(days=1)).to_pydatetime()
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
     elif dekad_label == "D2":
-        input_datetime = (d3_start_date - relativedelta(days=1)).to_pydatetime()
         start_datetime = d2_start_date.to_pydatetime()
-        end_datetime = input_datetime.replace(hour=23, minute=59, second=59)
+        end_datetime = (d3_start_date - relativedelta(days=1)).to_pydatetime()
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
     elif dekad_label == "D3":
-        input_datetime = last_day
         start_datetime = d3_start_date.to_pydatetime()
-        end_datetime = input_datetime.replace(hour=23, minute=59, second=59)
+        end_datetime = last_day.replace(hour=23, minute=59, second=59)
 
-    return input_datetime, (start_datetime, end_datetime)
+    return start_datetime, (start_datetime, end_datetime)
+
+
+def get_month(year: str | int, month: str) -> tuple:
+    """
+    Get the start date of the month that a date belongs to and the time range
+    for the month.
+
+    Parameters
+    ----------
+    year: int | str
+        Year
+    month: int | str
+        Month
+
+
+    Returns
+    -------
+    tuple
+        The start date of the month and the time range for the month.
+    """
+    if isinstance(year, str):
+        year = int(year)
+
+    if isinstance(month, str):
+        month = int(month)
+
+    start_datetime = datetime(year, month, 1)
+
+    last_day = datetime(year, month, calendar.monthrange(year, month)[1])
+    end_datetime = last_day.replace(hour=23, minute=59, second=59)
+
+    return start_datetime, (start_datetime, end_datetime)
 
 
 def prepare_dataset(
@@ -209,8 +240,16 @@ def prepare_dataset(
     ## Scene capture and Processing
 
     # Datetime derived from file name
-    year, month, dekad_label = tile_id.split(".")[-1].split("-")
-    input_datetime, time_range = get_dekad(year, month, dekad_label)
+    try:
+        year, month, dekad_label = tile_id.split(".")[-1].split("-")
+    except ValueError:
+        year, month = tile_id.split(".")[-1].split("-")
+        dekad_label = None
+
+    if dekad_label:
+        input_datetime, time_range = get_dekad(year, month, dekad_label)
+    else:
+        input_datetime, time_range = get_month(year, month)
     # Searchable datetime of the dataset, datetime object
     p.datetime = input_datetime
     # Searchable start and end datetimes of the dataset, datetime objects
@@ -245,6 +284,10 @@ def prepare_dataset(
     # and add them to the dataset.
     # For LULC there is only one measurement, land_cover_class
     if p.product_name == "wapor_soil_moisture":
-        p.note_measurement("relative_soil_moisture", dataset_path, relative_to_metadata=False)
+        measurement_name = "relative_soil_moisture"
+    elif p.product_name == "wapor_monthly_npp":
+        measurement_name = "net_primary_production"
+
+    p.note_measurement(measurement_name, dataset_path, relative_to_metadata=False)
 
     return p.to_dataset_doc(validate_correctness=True, sort_measurements=True)
