@@ -13,9 +13,7 @@ from external_odc_products_py.io import (
     get_filesystem,
 )
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.wapor_v3 import (
-    get_mapset_rasters,
-)
+from external_odc_products_py.wapor_v3 import get_mapset_rasters
 
 logger = get_logger(Path(__file__).stem, level=logging.INFO)
 

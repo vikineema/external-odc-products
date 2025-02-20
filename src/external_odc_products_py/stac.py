@@ -8,10 +8,7 @@ from eodatasets3.serialise import to_path  # noqa F401
 from eodatasets3.stac import to_stac_item
 from odc.aws import s3_dump
 
-from external_odc_products_py import (
-    iwmi_odr,
-    wapor_v3,
-)
+from external_odc_products_py import iwmi_odr, wapor_v3
 from external_odc_products_py.io import (
     check_directory_exists,
     check_file_exists,
@@ -64,7 +61,7 @@ def create_stac_files(
         )
 
     # Set to temporary dir as output metadata yaml files are not required.
-    metadata_output_dir = "/tmp/metadata_docs"
+    metadata_output_dir = "tmp/metadata_docs"
     if product_name not in os.path.basename(metadata_output_dir.rstrip("/")):
         metadata_output_dir = os.path.join(metadata_output_dir, product_name)
 
@@ -134,14 +131,14 @@ def create_stac_files(
             year, month, _ = tile_id.split(".")[-1].split("-")
             metadata_output_path = Path(
                 os.path.join(metadata_output_dir, year, month, f"{tile_id}.odc-metadata.yaml")
-            )
+            ).resolve()
             stac_item_destination_url = os.path.join(
                 stac_output_dir, year, month, f"{tile_id}.stac-item.json"
             )
         else:
             metadata_output_path = Path(
                 os.path.join(metadata_output_dir, f"{tile_id}.odc-metadata.yaml")
-            )
+            ).resolve()
             stac_item_destination_url = os.path.join(stac_output_dir, f"{tile_id}.stac-item.json")
 
         # Check if the stac item exist:
@@ -151,6 +148,19 @@ def create_stac_files(
                     f"{stac_item_destination_url} exists! Skipping stac file generation for {dataset_path}"
                 )
                 continue
+
+        # Create the required parent directories
+        metadata_output_parent_dir = os.path.dirname(metadata_output_path)
+        if not check_directory_exists(metadata_output_parent_dir):
+            fs = get_filesystem(metadata_output_parent_dir, anon=False)
+            fs.makedirs(metadata_output_parent_dir, exist_ok=True)
+            log.info(f"Created the directory {metadata_output_parent_dir}")
+
+        stac_item_parent_dir = os.path.dirname(stac_item_destination_url)
+        if not check_directory_exists(stac_item_parent_dir):
+            fs = get_filesystem(stac_item_parent_dir, anon=False)
+            fs.makedirs(stac_item_parent_dir, exist_ok=True)
+            log.info(f"Created the directory {stac_item_parent_dir}")
 
         # Prepare the dataset's metadata doc
         if product_name.startswith("iwmi"):

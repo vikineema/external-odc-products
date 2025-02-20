@@ -17,14 +17,17 @@ logger = get_logger(Path(__file__).stem, level=logging.INFO)
 
 
 def is_s3_path(path: str) -> bool:
+    path = str(path)
     return path.startswith("s3://")
 
 
 def is_gcsfs_path(path: str) -> bool:
+    path = str(path)
     return path.startswith("gcs://") or path.startswith("gs://")
 
 
 def is_url(path: str) -> bool:
+    path = str(path)
     return path.startswith("http://") or path.startswith("https://")
 
 
@@ -32,6 +35,7 @@ def get_filesystem(
     path: str,
     anon: bool = True,
 ) -> S3FileSystem | LocalFileSystem | GCSFileSystem:
+    path = str(path)
     if is_s3_path(path=path):
         fs = s3fs.S3FileSystem(anon=anon, s3_additional_kwargs={"ACL": "bucket-owner-full-control"})
     elif is_gcsfs_path(path=path):
@@ -45,6 +49,7 @@ def get_filesystem(
 
 
 def check_file_exists(path: str) -> bool:
+    path = str(path)
     fs = get_filesystem(path=path, anon=True)
     if fs.exists(path) and fs.isfile(path):
         return True
@@ -53,6 +58,7 @@ def check_file_exists(path: str) -> bool:
 
 
 def check_directory_exists(path: str) -> bool:
+    path = str(path)
     fs = get_filesystem(path=path, anon=True)
     if fs.exists(path) and fs.isdir(path):
         return True
@@ -61,6 +67,7 @@ def check_directory_exists(path: str) -> bool:
 
 
 def check_file_extension(path: str, accepted_file_extensions: list[str]) -> bool:
+    path = str(path)
     _, file_extension = os.path.splitext(path)
     if file_extension.lower() in accepted_file_extensions:
         return True
@@ -74,6 +81,7 @@ def is_geotiff(path: str) -> bool:
 
 
 def find_geotiff_files(directory_path: str, file_name_pattern: str = ".*") -> list[str]:
+    directory_path = str(directory_path)
     file_name_pattern = re.compile(file_name_pattern)
 
     fs = get_filesystem(path=directory_path, anon=True)

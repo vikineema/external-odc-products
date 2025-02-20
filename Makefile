@@ -34,3 +34,10 @@ logs:
 
 shell:
 	docker compose exec jupyter bash -c "cd /home/jovyan/workspace && exec bash"
+
+create-stac-wapor_soil_moisture:
+	create-stac-files \
+	 --product-name="wapor_soil_moisture" \
+	 --product-yaml="products/wapor_soil_moisture.odc-product.yaml" \
+	 --stac-output-dir="s3://wapor-v3/wapor_soil_moisture/" \
+	 --overwrite
