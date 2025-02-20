@@ -21,7 +21,7 @@ logger = get_logger(Path(__file__).stem, level=logging.INFO)
 @click.command()
 @click.option(
     "--product-name",
-    typ=str,
+    type=str,
     help="Name of the product to generate the stac item files for",
 )
 @click.option(
@@ -48,11 +48,12 @@ def get_storage_parameters(
         if product_name.startswith("wapor"):
             if product_name == "wapor_soil_moisture":
                 mapset_code = "L2-RSM-D"
-
+            if product_name == "wapor_monthly_npp":
+                mapset_code = "L2-NPP-M"
             geotiffs_file_paths = get_mapset_rasters(mapset_code)
             # Use a gsutil URI instead of the the public URL
             geotiffs_file_paths = [
-                i.replace("https://storage.googleapis.com/", "gs://") for i in geotiffs
+                i.replace("https://storage.googleapis.com/", "gs://") for i in geotiffs_file_paths
             ]
         else:
             raise ValueError("No file path to the directory containing the COG files provided")
@@ -71,12 +72,12 @@ def get_storage_parameters(
 
         item = {
             "crs": f"EPSG:{crs}",
-            "res_x": res_x,
-            "res_y": res_y,
-            "add_offset": add_offset,
-            "scale_factor": scale_factor,
+            "res_x": str(res_x),
+            "res_y": str(res_y),
+            "add_offset": str(add_offset),
+            "scale_factor": str(scale_factor),
             "dtype": dtype,
-            "nodata": nodata,
+            "nodata": str(nodata),
         }
         storage_parameters_list.append(item)
 
