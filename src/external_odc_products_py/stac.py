@@ -201,9 +201,6 @@ def create_stac_files(
 
         log.info(f"STAC item written to {stac_item_destination_url}")
 
-        print("manual break")
-        break
-
 
 if __name__ == "__main__":
     create_stac_files()
