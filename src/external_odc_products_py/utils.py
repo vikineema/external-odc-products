@@ -52,6 +52,20 @@ def odc_uuid(
 
 
 def download_product_yaml(url: str) -> str:
+    """
+    Download a product definition file from a raw github url.
+
+    Parameters
+    ----------
+    url : str
+        URL to the product definition file
+
+    Returns
+    -------
+    str
+        Local file path of the downloaded product definition file
+
+    """
     try:
         # Create output directory
         tmp_products_dir = "/tmp/products"
