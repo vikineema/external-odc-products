@@ -89,11 +89,6 @@ def create_stac_files(
     if is_s3_path(metadata_output_dir):
         raise RuntimeError("Metadata files require to be written to a local directory")
 
-    if not check_directory_exists(metadata_output_dir):
-        fs = get_filesystem(metadata_output_dir, anon=False)
-        fs.makedirs(metadata_output_dir, exist_ok=True)
-        log.info(f"Created the directory {metadata_output_dir}")
-
     # Path to product yaml
     if not is_s3_path(product_yaml):
         if is_url(product_yaml):
@@ -105,11 +100,6 @@ def create_stac_files(
     if product_name not in os.path.basename(stac_output_dir.rstrip("/")):
         stac_output_dir = os.path.join(stac_output_dir, product_name)
 
-    if not check_directory_exists(stac_output_dir):
-        fs = get_filesystem(stac_output_dir, anon=False)
-        fs.makedirs(stac_output_dir, exist_ok=True)
-        log.info(f"Created the directory {stac_output_dir}")
-
     # Geotiffs directory
     if geotiffs_dir:
         # Find all the geotiffs files in the directory
@@ -117,14 +107,16 @@ def create_stac_files(
         log.info(f"Found {len(all_geotiff_files)} geotiffs in {geotiffs_dir}")
     else:
         if product_name.startswith("wapor"):
+            # WaPOR version 3 mapset code for the product
             if product_name == "wapor_soil_moisture":
                 mapset_code = "L2-RSM-D"
             elif product_name == "wapor_monthly_npp":
                 mapset_code = "L2-NPP-M"
+
             all_geotiff_files = wapor_v3.get_mapset_rasters(mapset_code)
-            # Use a gsutil URI instead of the the public URL
+            # Use a gsutil URI instead of the public URL
             all_geotiff_files = [
-                i.replace("https://storage.googleapis.com/", "gs://") for i in geotiffs
+                i.replace("https://storage.googleapis.com/", "gs://") for i in all_geotiff_files
             ]
         else:
             raise ValueError("No file path to the directory containing the COG files provided")
@@ -134,7 +126,7 @@ def create_stac_files(
     task_chunks = [chunk.tolist() for chunk in task_chunks]
     task_chunks = list(filter(None, task_chunks))
 
-    # In case of the index being bigger than the number of positions in the array, the extra POD isn' necessary
+    # In case of the index being bigger than the number of positions in the array, the extra POD isn't necessary
     if len(task_chunks) <= worker_idx:
         log.warning(f"Worker {worker_idx} Skipped!")
         sys.exit(0)
