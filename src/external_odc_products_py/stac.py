@@ -206,7 +206,3 @@ def create_stac_files(
                 json.dump(stac_item, file, indent=2)  # `indent=4` makes it human-readable
 
         log.info(f"STAC item written to {stac_item_destination_url}")
-
-
-if __name__ == "__main__":
-    create_stac_files()

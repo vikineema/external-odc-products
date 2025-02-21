@@ -97,7 +97,3 @@ def get_storage_parameters(
     with fs.open(output_file, "w") as file:
         file.write(storage_parameters_json_array)
     logger.info(f"Tasks chunks written to {output_file}")
-
-
-if __name__ == "__main__":
-    get_storage_parameters()
