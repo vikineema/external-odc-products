@@ -10,7 +10,7 @@ from eodatasets3.serialise import to_path  # noqa F401
 from eodatasets3.stac import to_stac_item
 from odc.aws import s3_dump
 
-from external_odc_products_py import iwmi_odr, wapor_v3
+from external_odc_products_py import iwmi_odr_metadata, wapor_v3_metadata
 from external_odc_products_py.io import (
     check_directory_exists,
     check_file_exists,
@@ -113,7 +113,7 @@ def create_stac_files(
             elif product_name == "wapor_monthly_npp":
                 mapset_code = "L2-NPP-M"
 
-            all_geotiff_files = wapor_v3.get_mapset_rasters(mapset_code)
+            all_geotiff_files = wapor_v3_metadata.get_mapset_rasters(mapset_code)
             # Use a gsutil URI instead of the public URL
             all_geotiff_files = [
                 i.replace("https://storage.googleapis.com/", "gs://") for i in all_geotiff_files
@@ -190,13 +190,13 @@ def create_stac_files(
 
         # Prepare the dataset's metadata doc
         if product_name.startswith("iwmi"):
-            dataset_doc = iwmi_odr.prepare_dataset(
+            dataset_doc = iwmi_odr_metadata.prepare_dataset(
                 dataset_path=dataset_path,
                 product_yaml=product_yaml,
                 output_path=metadata_output_path,
             )
         elif product_name.startswith("wapor"):
-            dataset_doc = wapor_v3.prepare_dataset(
+            dataset_doc = wapor_v3_metadata.prepare_dataset(
                 dataset_path=dataset_path,
                 product_yaml=product_yaml,
                 output_path=metadata_output_path,

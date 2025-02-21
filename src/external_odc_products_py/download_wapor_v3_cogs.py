@@ -1,5 +1,7 @@
 """
-Crop Geotiffs to the extent of Africa
+Download the WaPOR version 3 mapset rasters and ,
+convert to Cloud Optimized Geotiff, and push to an S3 bucket.
+
 """
 
 import logging
@@ -8,77 +10,18 @@ import sys
 from pathlib import Path
 
 import click
-import geopandas as gpd
 import numpy as np
-import rioxarray
-from odc.geo.geobox import GeoBox
-from odc.geo.geom import Geometry
-from odc.geo.xr import assign_crs, write_cog
 
-from external_odc_products_py.io import (  # noqa F401
+from external_odc_products_py.io import (
     check_directory_exists,
     check_file_exists,
-    find_geotiff_files,
     get_filesystem,
 )
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.wapor_v3 import get_mapset_rasters
+from external_odc_products_py.utils import crop_geotiff
+from external_odc_products_py.wapor_v3_metadata import get_mapset_rasters
 
 log = get_logger(Path(__file__).stem, level=logging.INFO)
-
-AFRICA_EXTENT_URL = "https://raw.githubusercontent.com/digitalearthafrica/deafrica-extent/master/africa-extent-bbox.json"
-
-
-def reproject_geotiff(img_path: str, output_path: str):
-    da = rioxarray.open_rasterio(img_path).squeeze(dim="band")
-    crs = da.rio.crs
-    nodata = da.rio.nodata
-
-    da = assign_crs(da, crs)
-
-    # Subset to Africa
-    africa_extent = gpd.read_file(AFRICA_EXTENT_URL).to_crs(crs)
-    africa_extent_geopolygon = Geometry(africa_extent.iloc[0].geometry, crs=africa_extent.crs)
-    africa_extent_geobox = GeoBox.from_geopolygon(
-        geopolygon=africa_extent_geopolygon,
-        crs=da.odc.geobox.crs,
-        resolution=da.odc.geobox.resolution,
-    )
-
-    # Reproject
-    da = da.odc.reproject(africa_extent_geobox)
-
-    # Create an in memory COG.
-    cog_bytes = write_cog(geo_im=da, fname=":mem:", nodata=nodata, overview_resampling="nearest")
-
-    # Write to file
-    fs = get_filesystem(output_path, anon=False)
-    with fs.open(output_path, "wb") as file:
-        file.write(cog_bytes)
-    log.info(f"Cropped geotiff written to {output_path}")
-
-
-def crop_geotiff(img_path: str, output_path: str):
-    da = rioxarray.open_rasterio(img_path).squeeze(dim="band")
-    crs = da.rio.crs
-    nodata = da.rio.nodata
-
-    da = assign_crs(da, crs)
-
-    # Subset to Africa
-    africa_extent = gpd.read_file(AFRICA_EXTENT_URL).to_crs(crs)
-    minx, miny, maxx, maxy = africa_extent.total_bounds
-    # Note: lats are upside down!
-    da = da.sel(y=slice(maxy, miny), x=slice(minx, maxx))
-
-    # Create an in memory COG.
-    cog_bytes = write_cog(geo_im=da, fname=":mem:", nodata=nodata, overview_resampling="nearest")
-
-    # Write to file
-    fs = get_filesystem(output_path, anon=False)
-    with fs.open(output_path, "wb") as file:
-        file.write(cog_bytes)
-    log.info(f"Cropped geotiff written to {output_path}")
 
 
 @click.command()
@@ -106,7 +49,7 @@ def crop_geotiff(img_path: str, output_path: str):
     type=int,
     help="Sequential index which will be used to define the range of geotiffs the pod will work with.",
 )
-def crop_wapor_cogs(
+def download_wapor_v3_cogs(
     mapset_code: str, output_dir: str, overwrite: bool, max_parallel_steps: int, worker_idx: int
 ):
 
