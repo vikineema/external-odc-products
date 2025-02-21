@@ -51,3 +51,8 @@ get-storage-parameters:
 	get-storage-parameters \
 	--product-name="wapor_monthly_npp" \
 	--output-dir="tmp/storage_parameters/" 
+
+crop-wapor-soil-moisture-cogs:
+	crop-wapor-cogs \
+	--mapset-code="L2-RSM-D" \
+	--output-dir=data/wapor_soil_moisture

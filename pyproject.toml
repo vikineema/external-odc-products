@@ -33,6 +33,7 @@ lint = [
 [project.scripts]
 create-stac-files = "external_odc_products_py.stac:create_stac_files"
 get-storage-parameters = "external_odc_products_py.storage_parameters:get_storage_parameters"
+crop-wapor-cogs = "external_odc_products_py.crop_cogs:crop_wapor_cogs"
 
 [tool.isort]
 profile = "black"

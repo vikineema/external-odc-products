@@ -127,7 +127,11 @@ def create_stac_files(
         tile_id = os.path.basename(dataset_path).removesuffix(".tif")
 
         if product_name.startswith("wapor"):
-            year, month, _ = tile_id.split(".")[-1].split("-")
+            try:
+                year, month, _ = tile_id.split(".")[-1].split("-")
+            except ValueError:
+                year, month = tile_id.split(".")[-1].split("-")
+
             metadata_output_path = Path(
                 os.path.join(metadata_output_dir, year, month, f"{tile_id}.odc-metadata.yaml")
             ).resolve()
@@ -189,7 +193,7 @@ def create_stac_files(
             assets = stac_item["assets"]
             for band in assets.keys():
                 band_url = assets[band]["href"]
-                if band_url.startswith("gs://"):
+                if is_gcsfs_path(band_url):
                     new_band_url = band_url.replace("gs://", "https://storage.googleapis.com/")
                     stac_item["assets"][band]["href"] = new_band_url
 
