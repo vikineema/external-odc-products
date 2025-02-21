@@ -33,8 +33,8 @@ lint = [
 [project.scripts]
 create-stac-files = "external_odc_products_py.stac:create_stac_files"
 get-storage-parameters = "external_odc_products_py.storage_parameters:get_storage_parameters"
-crop-wapor-cogs = "external_odc_products_py.crop_cogs:crop_wapor_cogs"
-
+download-wapor-v3-cogs = "external_odc_products_py.download_wapor_v3_cogs:download_wapor_v3_cogs"
+download-esa-worldcereal-cogs = "external_odc_products_py.download_esa_worldcereal_cogs:download_esa_worldcereal_cogs"
 [tool.isort]
 profile = "black"
 

@@ -52,7 +52,17 @@ get-storage-parameters:
 	--product-name="wapor_monthly_npp" \
 	--output-dir="tmp/storage_parameters/" 
 
-crop-wapor-soil-moisture-cogs:
-	crop-wapor-cogs \
+download-wapor-soil-moisture-cogs:
+	download-wapor-v3-cogss \
 	--mapset-code="L2-RSM-D" \
 	--output-dir=data/wapor_soil_moisture
+
+download-esa-worldcereal-cogs:
+	download-esa-worldcereal-cogs \
+	--year="2021" \
+	--season="tc-wintercereals" \
+	--product="wintercereals" \
+	--output-dir=data/esa_worldcereal_sample/wintercereals \
+	--overwrite
+
+
