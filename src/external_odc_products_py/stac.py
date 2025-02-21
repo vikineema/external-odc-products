@@ -1,9 +1,11 @@
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 
 import click
+import numpy as np
 from eodatasets3.serialise import to_path  # noqa F401
 from eodatasets3.stac import to_stac_item
 from odc.aws import s3_dump
@@ -45,12 +47,26 @@ log = get_logger(Path(__file__).stem, level=logging.INFO)
     help="Directory to write the stac files docs to",
 )
 @click.option("--overwrite/--no-overwrite", default=False)
+@click.option(
+    "--max-parallel-steps",
+    default=1,
+    type=int,
+    help="Maximum number of parallel steps/pods to have in the workflow.",
+)
+@click.option(
+    "--worker-idx",
+    default=0,
+    type=int,
+    help="Sequential index which will be used to define the range of geotiffs the pod will work with.",
+)
 def create_stac_files(
     product_name: str,
     product_yaml: str,
     geotiffs_dir: str,
     stac_output_dir: str,
     overwrite: bool,
+    max_parallel_steps: int,
+    worker_idx: int,
 ):
 
     # Validate products
@@ -97,20 +113,35 @@ def create_stac_files(
     # Geotiffs directory
     if geotiffs_dir:
         # Find all the geotiffs files in the directory
-        geotiffs = find_geotiff_files(geotiffs_dir)
+        all_geotiff_files = find_geotiff_files(geotiffs_dir)
+        log.info(f"Found {len(all_geotiff_files)} geotiffs in {geotiffs_dir}")
     else:
         if product_name.startswith("wapor"):
             if product_name == "wapor_soil_moisture":
                 mapset_code = "L2-RSM-D"
             elif product_name == "wapor_monthly_npp":
                 mapset_code = "L2-NPP-M"
-            geotiffs = wapor_v3.get_mapset_rasters(mapset_code)
+            all_geotiff_files = wapor_v3.get_mapset_rasters(mapset_code)
             # Use a gsutil URI instead of the the public URL
-            geotiffs = [i.replace("https://storage.googleapis.com/", "gs://") for i in geotiffs]
+            all_geotiff_files = [
+                i.replace("https://storage.googleapis.com/", "gs://") for i in geotiffs
+            ]
         else:
             raise ValueError("No file path to the directory containing the COG files provided")
 
-    log.info(f"Found {len(geotiffs)} geotiffs")
+    # Split files equally among the workers
+    task_chunks = np.array_split(np.array(all_geotiff_files), max_parallel_steps)
+    task_chunks = [chunk.tolist() for chunk in task_chunks]
+    task_chunks = list(filter(None, task_chunks))
+
+    # In case of the index being bigger than the number of positions in the array, the extra POD isn' necessary
+    if len(task_chunks) <= worker_idx:
+        log.warning(f"Worker {worker_idx} Skipped!")
+        sys.exit(0)
+
+    log.info(f"Executing worker {worker_idx}")
+
+    geotiffs = task_chunks[worker_idx]
 
     log.info(f"Generating stac files for the product {product_name}")
 

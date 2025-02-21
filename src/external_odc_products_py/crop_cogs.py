@@ -136,7 +136,7 @@ def crop_wapor_cogs(
         log.info(f"Proceesing {geotiff} {idx+1}/{len(geotiffs)}")
 
         tile_id = os.path.basename(geotiff).removesuffix(".tif")
-        
+
         try:
             year, month, _ = tile_id.split(".")[-1].split("-")
         except ValueError:
