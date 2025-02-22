@@ -162,6 +162,16 @@ def reproject_geotiff(img_path: str, output_path: str):
 
 
 def crop_geotiff(img_path: str, output_path: str):
+    """
+    Crop a geotiff file to the extent of Africa
+
+    Parameters
+    ----------
+    img_path : str
+         Path to geotiff to crop
+    output_path : str
+        Output file path
+    """
     da = rioxarray.open_rasterio(img_path).squeeze(dim="band")
     crs = da.rio.crs
     nodata = da.rio.nodata

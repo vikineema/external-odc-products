@@ -156,6 +156,23 @@ def download_esa_worldcereal_cogs(
     max_parallel_steps,
     worker_idx,
 ):
+    """Download the ESA WorldCereal 10 m 2021 v100 products from Zenodo,
+    convert to Cloud Optimized Geotiff, and push to an S3 bucket.
+
+        Args:
+            year (_type_): _description_
+            season (_type_): _description_
+            product (_type_): _description_
+            output_dir (_type_): _description_
+            overwrite (_type_): _description_
+            max_parallel_steps (_type_): _description_
+            worker_idx (_type_): _description_
+
+        Raises:
+            ValueError: _description_
+            ValueError: _description_
+            ValueError: _description_
+    """
 
     if season not in VALID_SEASONS:
         raise ValueError(f"Invalid season selected: {season}")
