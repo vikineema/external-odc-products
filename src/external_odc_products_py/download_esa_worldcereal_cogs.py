@@ -21,7 +21,7 @@ from external_odc_products_py.io import (
     get_filesystem,
 )
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.utils import AFRICA_EXTENT_URL, crop_geotiff
+from external_odc_products_py.utils import AFRICA_EXTENT_URL, crop_geotiff, test_crop_geotiff
 
 WORLDCEREAL_AEZ_URL = "https://zenodo.org/records/7875105/files/WorldCereal_AEZ.geojson"
 VALID_YEARS = ["2021"]
@@ -156,22 +156,9 @@ def download_esa_worldcereal_cogs(
     max_parallel_steps,
     worker_idx,
 ):
-    """Download the ESA WorldCereal 10 m 2021 v100 products from Zenodo,
+    """
+    Download the ESA WorldCereal 10 m 2021 v100 products from Zenodo,
     convert to Cloud Optimized Geotiff, and push to an S3 bucket.
-
-        Args:
-            year (_type_): _description_
-            season (_type_): _description_
-            product (_type_): _description_
-            output_dir (_type_): _description_
-            overwrite (_type_): _description_
-            max_parallel_steps (_type_): _description_
-            worker_idx (_type_): _description_
-
-        Raises:
-            ValueError: _description_
-            ValueError: _description_
-            ValueError: _description_
     """
 
     if season not in VALID_SEASONS:
@@ -202,7 +189,7 @@ def download_esa_worldcereal_cogs(
         if not overwrite:
             if check_file_exists(output_cog_path):
                 log.info(
-                    f"{output_cog_path} exists! Skipping stac file generation for {output_cog_path}"
+                    f"{output_cog_path} exists! Skipping ..."
                 )
                 continue
 
@@ -213,7 +200,7 @@ def download_esa_worldcereal_cogs(
             fs.makedirs(output_cog_parent_dir, exist_ok=True)
             log.info(f"Created the directory {output_cog_parent_dir}")
 
-        crop_geotiff(local_classification_geotiff, output_cog_path)
+        test_crop_geotiff(local_classification_geotiff, output_cog_path)
 
     # Download the confidence geotiffs for the product
     confidence_zip_url = f"https://zenodo.org/records/7875105/files/WorldCereal_{year}_{season}_{product}_confidence.zip?download=1"
@@ -234,7 +221,7 @@ def download_esa_worldcereal_cogs(
         if not overwrite:
             if check_file_exists(output_cog_path):
                 log.info(
-                    f"{output_cog_path} exists! Skipping stac file generation for {output_cog_path}"
+                    f"{output_cog_path} exists! Skipping ..."
                 )
                 continue
 
@@ -245,4 +232,4 @@ def download_esa_worldcereal_cogs(
             fs.makedirs(output_cog_parent_dir, exist_ok=True)
             log.info(f"Created the directory {output_cog_parent_dir}")
 
-        crop_geotiff(local_confidence_geotiff, output_cog_path)
+        test_crop_geotiff(local_confidence_geotiff, output_cog_path)

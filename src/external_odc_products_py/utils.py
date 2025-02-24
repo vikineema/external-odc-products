@@ -192,3 +192,20 @@ def crop_geotiff(img_path: str, output_path: str):
     with fs.open(output_path, "wb") as file:
         file.write(cog_bytes)
     log.info(f"Cropped geotiff written to {output_path}")
+
+
+def test_crop_geotiff(img_path: str, output_path: str):
+    """
+    Crop a geotiff file to the extent of Africa
+
+    Parameters
+    ----------
+    img_path : str
+         Path to geotiff to crop
+    output_path : str
+        Output file path
+    """
+    # Write to file
+    fs = get_filesystem(output_path, anon=False)
+    fs.cp(img_path, output_path)
+    log.info(f"Cropped geotiff written to {output_path}")

@@ -62,7 +62,7 @@ download-esa-worldcereal-cogs:
 	--year="2021" \
 	--season="tc-wintercereals" \
 	--product="wintercereals" \
-	--output-dir=data/esa_worldcereal_sample/wintercereals \
+	--output-dir=data/esa_worldcereal_sample/ \
 	--overwrite
 
 
