@@ -14,6 +14,8 @@ from zipfile import ZipFile
 import click
 import geopandas as gpd
 import requests
+import rioxarray
+from odc.geo.xr import assign_crs, write_cog
 
 from external_odc_products_py.io import (
     check_directory_exists,
@@ -21,7 +23,7 @@ from external_odc_products_py.io import (
     get_filesystem,
 )
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.utils import AFRICA_EXTENT_URL, crop_geotiff, test_crop_geotiff
+from external_odc_products_py.utils import AFRICA_EXTENT_URL
 
 WORLDCEREAL_AEZ_URL = "https://zenodo.org/records/7875105/files/WorldCereal_AEZ.geojson"
 VALID_YEARS = ["2021"]
@@ -62,7 +64,9 @@ def get_africa_aez_ids():
         africa_extent, predicate="intersects", how="inner"
     )["aez_id"].to_list()
 
-    africa_worldcereal_aez_ids = [str(i) for i in africa_worldcereal_aez_ids]
+    to_remove = [17135, 17166, 34119, 40129, 46171, 43134, 43170]
+
+    africa_worldcereal_aez_ids = [str(i) for i in africa_worldcereal_aez_ids if i not in to_remove]
     africa_worldcereal_aez_ids = set(africa_worldcereal_aez_ids)
 
     return africa_worldcereal_aez_ids
@@ -121,6 +125,26 @@ def download_and_unzip_data(zip_url: str):
     log.info(f"Download complete! \nDownloaded {len(local_aez_geotiffs)} geotiffs")
 
     return local_aez_geotiffs
+
+
+def upload_cog(img_path: str, output_path: str):
+    da = rioxarray.open_rasterio(img_path).squeeze(dim="band")
+    crs = da.rio.crs
+    nodata = da.rio.nodata
+    tags = da.attrs
+
+    da = assign_crs(da, crs)
+
+    # Create an in memory COG.
+    cog_bytes = write_cog(
+        geo_im=da, fname=":mem:", nodata=nodata, overview_resampling="nearest", tags=tags
+    )
+
+    # Write to file
+    fs = get_filesystem(output_path, anon=False)
+    with fs.open(output_path, "wb") as file:
+        file.write(cog_bytes)
+    log.info(f"COG written to {output_path}")
 
 
 @click.command()
@@ -188,9 +212,7 @@ def download_esa_worldcereal_cogs(
         output_cog_path = os.path.join(output_dir, product, season, aez_id, year, f"{filename}.tif")
         if not overwrite:
             if check_file_exists(output_cog_path):
-                log.info(
-                    f"{output_cog_path} exists! Skipping ..."
-                )
+                log.info(f"{output_cog_path} exists! Skipping ...")
                 continue
 
         # Create the required parent directories
@@ -198,9 +220,8 @@ def download_esa_worldcereal_cogs(
         if not check_directory_exists(output_cog_parent_dir):
             fs = get_filesystem(output_cog_parent_dir, anon=False)
             fs.makedirs(output_cog_parent_dir, exist_ok=True)
-            log.info(f"Created the directory {output_cog_parent_dir}")
 
-        test_crop_geotiff(local_classification_geotiff, output_cog_path)
+        upload_cog(local_classification_geotiff, output_cog_path)
 
     # Download the confidence geotiffs for the product
     confidence_zip_url = f"https://zenodo.org/records/7875105/files/WorldCereal_{year}_{season}_{product}_confidence.zip?download=1"
@@ -220,9 +241,7 @@ def download_esa_worldcereal_cogs(
         output_cog_path = os.path.join(output_dir, product, season, aez_id, year, f"{filename}.tif")
         if not overwrite:
             if check_file_exists(output_cog_path):
-                log.info(
-                    f"{output_cog_path} exists! Skipping ..."
-                )
+                log.info(f"{output_cog_path} exists! Skipping ...")
                 continue
 
         # Create the required parent directories
@@ -230,6 +249,5 @@ def download_esa_worldcereal_cogs(
         if not check_directory_exists(output_cog_parent_dir):
             fs = get_filesystem(output_cog_parent_dir, anon=False)
             fs.makedirs(output_cog_parent_dir, exist_ok=True)
-            log.info(f"Created the directory {output_cog_parent_dir}")
 
-        test_crop_geotiff(local_confidence_geotiff, output_cog_path)
+        upload_cog(local_confidence_geotiff, output_cog_path)
