@@ -21,7 +21,7 @@ from external_odc_products_py.io import (
     is_url,
 )
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.utils import download_product_yaml
+from external_odc_products_py.utils import download_product_yaml, fix_stac_item
 
 log = get_logger(Path(__file__).stem, level=logging.INFO)
 
@@ -212,13 +212,7 @@ def create_stac_files(
         )
 
         # Fix links in stac item
-        if product_name.startswith("wapor"):
-            assets = stac_item["assets"]
-            for band in assets.keys():
-                band_url = assets[band]["href"]
-                if is_gcsfs_path(band_url):
-                    new_band_url = band_url.replace("gs://", "https://storage.googleapis.com/")
-                    stac_item["assets"][band]["href"] = new_band_url
+        stac_item = fix_stac_item(stac_item)
 
         # Write stac item
         if is_s3_path(stac_item_destination_url):
