@@ -94,3 +94,32 @@ def find_geotiff_files(directory_path: str, file_name_pattern: str = ".*") -> li
     elif is_gcsfs_path(path=directory_path):
         geotiff_file_paths = [f"gs://{file}" for file in geotiff_file_paths]
     return geotiff_file_paths
+
+
+def is_json(path: str) -> bool:
+    accepted_json_extensions = [".json"]
+    return check_file_extension(path=path, accepted_file_extensions=accepted_json_extensions)
+
+
+def find_json_files(directory_path: str, file_name_pattern: str = ".*") -> list[str]:
+    file_name_pattern = re.compile(file_name_pattern)
+
+    fs = get_filesystem(path=directory_path, anon=True)
+
+    json_file_paths = []
+
+    for root, dirs, files in fs.walk(directory_path):
+        for file_name in files:
+            if is_json(path=file_name):
+                if re.search(file_name_pattern, file_name):
+                    json_file_paths.append(os.path.join(root, file_name))
+                else:
+                    continue
+            else:
+                continue
+
+    if is_s3_path(path=directory_path):
+        json_file_paths = [f"s3://{file}" for file in json_file_paths]
+    elif is_gcsfs_path(path=directory_path):
+        json_file_paths = [f"gs://{file}" for file in json_file_paths]
+    return json_file_paths

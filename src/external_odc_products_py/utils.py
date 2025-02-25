@@ -279,6 +279,6 @@ def fix_stac_item(stac_file: dict) -> dict:
 
         # Update properties
         if new_measurement_properties:
-            stac_file["assets"][measurement] = new_properties
+            stac_file["assets"][measurement] = new_measurement_properties
 
     return stac_file

@@ -9,18 +9,19 @@ import logging
 import os
 import shutil
 from pathlib import Path
+from subprocess import STDOUT, check_output
 from zipfile import ZipFile
 
 import click
 import geopandas as gpd
 import requests
-import rioxarray
-from odc.geo.xr import assign_crs, write_cog
+from odc.aws import s3_dump
 
 from external_odc_products_py.io import (
     check_directory_exists,
     check_file_exists,
     get_filesystem,
+    is_s3_path,
 )
 from external_odc_products_py.logs import get_logger
 from external_odc_products_py.utils import AFRICA_EXTENT_URL
@@ -127,24 +128,37 @@ def download_and_unzip_data(zip_url: str):
     return local_aez_geotiffs
 
 
-def upload_cog(img_path: str, output_path: str):
-    da = rioxarray.open_rasterio(img_path).squeeze(dim="band")
-    crs = da.rio.crs
-    nodata = da.rio.nodata
-    tags = da.attrs
+def create_and_upload_cog(img_path: str, output_path: str):
+    """
+    This manages memory better than using the crop_geotiff from utils.py
+    Able to use this on 16GB RAM machine.
+    """
+    if is_s3_path(output_path):
+        # Temporary directory to store the cogs before uploading to s3
+        local_cog_dir = os.path.join(LOCAL_DOWNLOAD_DIR, "cogs")
+        if not check_directory_exists(local_cog_dir):
+            fs = get_filesystem(local_cog_dir, anon=False)
+            fs.makedirs(local_cog_dir, exist_ok=True)
 
-    da = assign_crs(da, crs)
+        # Create a COG and save to local disk
+        cloud_optimised_file = os.path.join(local_cog_dir, os.path.basename(output_path))
+        cmd = f"rio cogeo create --overview-resampling nearest {img_path} {cloud_optimised_file}"
+        check_output(cmd, stderr=STDOUT, shell=True)
+        log.info(f"File {cloud_optimised_file} cloud optimised successfully")
 
-    # Create an in memory COG.
-    cog_bytes = write_cog(
-        geo_im=da, fname=":mem:", nodata=nodata, overview_resampling="nearest", tags=tags
-    )
-
-    # Write to file
-    fs = get_filesystem(output_path, anon=False)
-    with fs.open(output_path, "wb") as file:
-        file.write(cog_bytes)
-    log.info(f"COG written to {output_path}")
+        # Uppload COG to s3
+        log.info(f"Upload {cloud_optimised_file} to S3 {output_path}")
+        s3_dump(
+            data=open(str(cloud_optimised_file), "rb").read(),
+            url=output_path,
+            ACL="bucket-owner-full-control",
+            ContentType="image/tiff",
+        )
+        log.info(f"File written to {output_path}")
+    else:
+        cmd = f"rio cogeo create --overview-resampling nearest {img_path} {output_path}"
+        check_output(cmd, stderr=STDOUT, shell=True)
+        log.info(f"File {output_path} cloud optimised successfully")
 
 
 @click.command()
@@ -221,7 +235,7 @@ def download_esa_worldcereal_cogs(
             fs = get_filesystem(output_cog_parent_dir, anon=False)
             fs.makedirs(output_cog_parent_dir, exist_ok=True)
 
-        upload_cog(local_classification_geotiff, output_cog_path)
+        create_and_upload_cog(local_classification_geotiff, output_cog_path)
 
     # Download the confidence geotiffs for the product
     confidence_zip_url = f"https://zenodo.org/records/7875105/files/WorldCereal_{year}_{season}_{product}_confidence.zip?download=1"
@@ -250,4 +264,4 @@ def download_esa_worldcereal_cogs(
             fs = get_filesystem(output_cog_parent_dir, anon=False)
             fs.makedirs(output_cog_parent_dir, exist_ok=True)
 
-        upload_cog(local_confidence_geotiff, output_cog_path)
+        create_and_upload_cog(local_confidence_geotiff, output_cog_path)
