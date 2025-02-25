@@ -43,17 +43,12 @@ shell:
 add-products:
 	docker compose exec jupyter bash -c "cd /home/jovyan/workspace && bash workflows/add_products.sh products"
 
-create-stac-wapor_soil_moisture:
-	create-stac-files \
-	 --product-name="wapor_soil_moisture" \
-	 --product-yaml="products/wapor_soil_moisture.odc-product.yaml" \
-	 --stac-output-dir="s3://wapor-v3/wapor_soil_moisture/" \
-	 --overwrite
-
 get-storage-parameters:
 	get-storage-parameters \
 	--product-name="wapor_monthly_npp" \
 	--output-dir="tmp/storage_parameters/" 
+
+## ESA WorldCereal
 
 download-esa-worldcereal-cogs:
 	download-esa-worldcereal-cogs \
@@ -63,9 +58,33 @@ download-esa-worldcereal-cogs:
 	--output-dir=data/esa_worldcereal_sample/ \
 	--overwrite
 
+
+## WaPOR v3
+
+# Download and crop WaPOR version 3 GeoTIFFs
+download-wapor-monthly-npp-cogs:
+	download-wapor-v3-cogs \
+	--mapset-code="L2-NPP-M" \
+	--output-dir=data/wapor_monthly_npp/ \
+	--overwrite
+
+download-wapor-soil-moisture-cogs:
+	download-wapor-v3-cogs \
+	--mapset-code="L2-RSM-D" \
+	--output-dir=data/wapor_soil_moisture/ \
+	--overwrite
+
+# Create stac files for the WaPOR version 3 COGS
+create-wapor-soil-moisture-stac:
+	create-stac-files \
+	 --product-name="wapor_soil_moisture" \
+	 --product-yaml="products/wapor_soil_moisture.odc-product.yaml" \
+	 --stac-output-dir="s3://wapor-v3/wapor_soil_moisture/" \
+	 --overwrite
+
+# Index stac files
 index-wapor-soil-moisture:
 	docker compose exec jupyter \
 	s3-to-dc s3://wapor-v3/wapor_soil_moisture/**/**.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	wapor_soil_moisture
-
