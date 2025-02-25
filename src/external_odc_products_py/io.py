@@ -2,6 +2,7 @@ import logging
 import os
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import fsspec
 import gcsfs
@@ -16,15 +17,27 @@ logger = get_logger(Path(__file__).stem, level=logging.INFO)
 
 
 def is_s3_path(path: str) -> bool:
-    return path.startswith("s3://")
+    o = urlparse(path)
+    if o.scheme in ["s3"]:
+        return True
+    else:
+        return False
 
 
 def is_gcsfs_path(path: str) -> bool:
-    return path.startswith("gcs://") or path.startswith("gs://")
+    o = urlparse(path)
+    if o.scheme in ["gcs", "gs"]:
+        return True
+    else:
+        return False
 
 
 def is_url(path: str) -> bool:
-    return path.startswith("http://") or path.startswith("https://")
+    o = urlparse(path)
+    if o.scheme in ["http", "https"]:
+        return True
+    else:
+        return False
 
 
 def get_filesystem(

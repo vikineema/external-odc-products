@@ -130,6 +130,8 @@ def download_and_unzip_data(zip_url: str):
 
 def create_and_upload_cog(img_path: str, output_path: str):
     """
+    Create COG from GeoTIFF.
+
     This manages memory better than using the crop_geotiff from utils.py
     Able to use this on 16GB RAM machine.
     """

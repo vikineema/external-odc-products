@@ -8,20 +8,100 @@ import logging
 import os
 import sys
 from pathlib import Path
+from subprocess import STDOUT, check_output
+from urllib.parse import urlparse
 
 import click
 import numpy as np
+from odc.aws import s3_dump
 
 from external_odc_products_py.io import (
     check_directory_exists,
     check_file_exists,
     get_filesystem,
+    is_s3_path,
 )
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.utils import crop_geotiff
 from external_odc_products_py.wapor_v3_metadata import get_mapset_rasters
 
+LOCAL_DOWNLOAD_DIR = "tmp/wapor_v3"
+
 log = get_logger(Path(__file__).stem, level=logging.INFO)
+
+
+def get_path_with_handler(url):
+    """
+    Get the gdal file system handler for a path
+    """
+    o = urlparse(url)
+
+    bucket = o.netloc
+    key = o.path
+
+    if o.scheme in ["http", "https"]:
+        # /vsicurl/http[s]://path/to/remote/resource
+        path_with_handler = os.path.join("/vsicurl/", url)
+    elif o.scheme in ["s3"]:
+        # /vsis3/bucket/key
+        path_with_handler = os.path.join("/vsis3/", bucket, key.lstrip("/"))
+    elif o.scheme in ["gcs", "gs"]:
+        # /vsigs/bucket/key
+        path_with_handler = os.path.join("/vsigs/", bucket, key.lstrip("/"))
+    if o.scheme == "" or o.scheme == "file":
+        path_with_handler = os.path.abspath(url)
+
+    return path_with_handler
+
+
+def crop_and_upload_cog(img_path: str, output_path: str):
+    """
+    Crop GeoTIFF to Africa extent then create a COG and upload to S#
+
+    This manages memory better than using the crop_geotiff from utils.py
+    Able to use this on 16GB RAM machine.
+    """
+    # Temporary directory to store the clipped geotiffs
+    local_cropped_tiffs_dir = os.path.join(LOCAL_DOWNLOAD_DIR, "cropped_geotiffs")
+    if not check_directory_exists(local_cropped_tiffs_dir):
+        fs = get_filesystem(local_cropped_tiffs_dir, anon=False)
+        fs.makedirs(local_cropped_tiffs_dir, exist_ok=True)
+
+    # Crop GeoTIFF and save to disk
+    temp_geotiff = os.path.join(local_cropped_tiffs_dir, os.path.basename(output_path))
+    cmd = f"gdal_translate -projwin -26.36 38.35 64.50 -47.97 -projwin_srs EPSG:4326 \
+    {get_path_with_handler(img_path)} {temp_geotiff}"
+    check_output(cmd, stderr=STDOUT, shell=True)
+    log.info(f"File {temp_geotiff} croppped successfully")
+
+    # Create a COG file from cropped GeoTIFF and save to disk
+    if is_s3_path(output_path):
+        # Temporary directory to store the cogs before uploading to s3
+        local_cog_dir = os.path.join(LOCAL_DOWNLOAD_DIR, "cogs")
+        if not check_directory_exists(local_cog_dir):
+            fs = get_filesystem(local_cog_dir, anon=False)
+            fs.makedirs(local_cog_dir, exist_ok=True)
+
+        # Create a COG and save to local disk
+        cloud_optimised_file = os.path.join(local_cog_dir, os.path.basename(output_path))
+        cmd = (
+            f"rio cogeo create --overview-resampling nearest {temp_geotiff} {cloud_optimised_file}"
+        )
+        check_output(cmd, stderr=STDOUT, shell=True)
+        log.info(f"File {cloud_optimised_file} cloud optimised successfully")
+
+        # Uppload COG to s3
+        log.info(f"Upload {cloud_optimised_file} to S3 {output_path}")
+        s3_dump(
+            data=open(str(cloud_optimised_file), "rb").read(),
+            url=output_path,
+            ACL="bucket-owner-full-control",
+            ContentType="image/tiff",
+        )
+        log.info(f"File written to {output_path}")
+    else:
+        cmd = f"rio cogeo create --overview-resampling nearest {temp_geotiff} {output_path}"
+        check_output(cmd, stderr=STDOUT, shell=True)
+        log.info(f"File {output_path} cloud optimised successfully")
 
 
 @click.command()
@@ -98,6 +178,5 @@ def download_wapor_v3_cogs(
         if not check_directory_exists(output_cog_parent_dir):
             fs = get_filesystem(output_cog_parent_dir, anon=False)
             fs.makedirs(output_cog_parent_dir, exist_ok=True)
-            log.info(f"Created the directory {output_cog_parent_dir}")
 
-        crop_geotiff(geotiff, output_cog_path)
+        crop_and_upload_cog(geotiff, output_cog_path)
