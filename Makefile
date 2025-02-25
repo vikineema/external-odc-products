@@ -10,8 +10,11 @@ fix-file-permissions:
 
 setup-explorer:
 	# Initialise and create product summaries
+	docker compose up -d explorer
 	docker compose exec -T explorer cubedash-gen --init --all
-	docker compose exec -T explorer cubedash-run --port 8081
+	# Do not run this below it messes up the configuration
+	# http://localhost:8080/products
+	# docker compose exec -T explorer cubedash-run #--port 8081
 
 get-jupyter-token:
 	docker compose exec -T jupyter jupyter notebook list
@@ -24,7 +27,7 @@ up: ## Bring up your Docker environment
 	docker compose run checkdb
 	docker compose up -d jupyter
 	# make fix-file-permissions
-	docker compose up -d explorer
+	# docker compose up -d explorer
 	make init
 	make add-products
 
@@ -52,11 +55,6 @@ get-storage-parameters:
 	--product-name="wapor_monthly_npp" \
 	--output-dir="tmp/storage_parameters/" 
 
-download-wapor-soil-moisture-cogs:
-	download-wapor-v3-cogss \
-	--mapset-code="L2-RSM-D" \
-	--output-dir=data/wapor_soil_moisture
-
 download-esa-worldcereal-cogs:
 	download-esa-worldcereal-cogs \
 	--year="2021" \
@@ -65,4 +63,9 @@ download-esa-worldcereal-cogs:
 	--output-dir=data/esa_worldcereal_sample/ \
 	--overwrite
 
+index-wapor-soil-moisture:
+	docker compose exec jupyter \
+	s3-to-dc s3://wapor-v3/wapor_soil_moisture/**/**.json \
+	--no-sign-request --update-if-exists --allow-unsafe --stac \
+	wapor_soil_moisture
 

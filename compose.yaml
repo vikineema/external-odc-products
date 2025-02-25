@@ -26,6 +26,7 @@ services:
       - postgres:postgres
     ports:
       - "9988:9988"
+      - "8091:8080"
     user:
       1000:100
     volumes:
@@ -57,6 +58,6 @@ services:
     links:
       - postgres:postgres
     ports:
-      - 8080:8081
+      - 8080:8080
     depends_on:
       - postgres
