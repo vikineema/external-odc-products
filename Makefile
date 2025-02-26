@@ -45,18 +45,8 @@ add-products:
 
 get-storage-parameters:
 	get-storage-parameters \
-	--product-name="wapor_monthly_npp" \
+	--geotiffs-dir=data/esa_worldcereal_sample/wintercereals \
 	--output-dir="tmp/storage_parameters/" 
-
-## ESA WorldCereal
-
-download-esa-worldcereal-cogs:
-	download-esa-worldcereal-cogs \
-	--year="2021" \
-	--season="tc-wintercereals" \
-	--product="wintercereals" \
-	--output-dir=data/esa_worldcereal_sample/ \
-	--overwrite
 
 
 ## WaPOR v3
@@ -88,3 +78,22 @@ index-wapor-soil-moisture:
 	s3-to-dc s3://wapor-v3/wapor_soil_moisture/**/**.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	wapor_soil_moisture
+
+
+## ESA WorldCereal
+
+download-esa-worldcereal-cogs:
+	download-esa-worldcereal-cogs \
+	--year="2021" \
+	--season="tc-wintercereals" \
+	--product="wintercereals" \
+	--output-dir=data/esa_worldcereal_sample/  \
+	--no-overwrite
+
+create-esa-wordlcereal-stac:
+	create-esa-wordlcereal-stac \
+	 --product-name="esa_worldcereal_wintercereals_tc_wintercereals" \
+	 --product-yaml="products/esa_worldcereal_wintercereals_tc_wintercereals.odc-product.yaml" \
+	 --geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
+	 --stac-output-dir="data/esa_worldcereal_sample/eodatasets3_0_30_7" \
+	 --no-overwrite

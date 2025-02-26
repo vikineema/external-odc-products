@@ -1,6 +1,6 @@
 """
 Download the ESA WorldCereal 10 m 2021 v100 products from Zenodo,
-convert to CLoud Optimized Geotiff, and push to an S3 bucket.
+convert to Cloud Optimized Geotiff, and push to an S3 bucket.
 
 Datasource: https://zenodo.org/records/7875105
 """
@@ -175,26 +175,12 @@ def create_and_upload_cog(img_path: str, output_path: str):
     help="Directory to write the cropped COG files to",
 )
 @click.option("--overwrite/--no-overwrite", default=False)
-@click.option(
-    "--max-parallel-steps",
-    default=1,
-    type=int,
-    help="Maximum number of parallel steps/pods to have in the workflow.",
-)
-@click.option(
-    "--worker-idx",
-    default=0,
-    type=int,
-    help="Sequential index which will be used to define the range of geotiffs the pod will work with.",
-)
 def download_esa_worldcereal_cogs(
     year,
     season,
     product,
     output_dir,
     overwrite,
-    max_parallel_steps,
-    worker_idx,
 ):
     """
     Download the ESA WorldCereal 10 m 2021 v100 products from Zenodo,

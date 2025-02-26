@@ -10,7 +10,7 @@ dependencies= [
     "aiobotocore[boto3,awscli]",
     "click",
     "datacube==1.8.20",
-    "eodatasets3",
+    "eodatasets3==0.30.7",
     "fsspec[full]",
     "gcsfs",
     "geopandas",
@@ -35,7 +35,11 @@ lint = [
 create-stac-files = "external_odc_products_py.stac:create_stac_files"
 get-storage-parameters = "external_odc_products_py.storage_parameters:get_storage_parameters"
 download-wapor-v3-cogs = "external_odc_products_py.download_wapor_v3_cogs:download_wapor_v3_cogs"
-download-esa-worldcereal-cogs = "external_odc_products_py.download_esa_worldcereal_cogs:download_esa_worldcereal_cogs"
+
+# ESA WorldCereal 10 m 2021 v100
+download-esa-worldcereal-cogs = "external_odc_products_py.esa_worldcereal.download_cogs:download_esa_worldcereal_cogs"
+create-esa-wordlcereal-stac = "external_odc_products_py.esa_worldcereal.create_stac:create_esa_worldcereal_stac"
+
 [tool.isort]
 profile = "black"
 

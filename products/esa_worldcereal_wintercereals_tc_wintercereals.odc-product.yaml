@@ -1,0 +1,26 @@
+---
+name: 
+description: esa_worldcereal_wintercereals_tc_wintercereals
+metadata_type: eo3
+license: CC-BY-4.0
+
+metadata:
+  product:
+    name: esa_worldcereal_wintercereals_tc_wintercereals
+
+measurements:
+  - name: "classification"
+    dtype: uint8
+    nodata: 255
+    units: 1
+    scale_factor: 1.0
+    add_offset: 0.0
+  - name: "confidence"
+    dtype: uint8
+    nodata: 255
+    units: "%"
+    scale_factor: 1.0
+    add_offset: 0.0
+
+load:
+  crs: EPSG:4326

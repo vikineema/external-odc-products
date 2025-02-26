@@ -22,6 +22,7 @@ logger = get_logger(Path(__file__).stem, level=logging.INFO)
 @click.option(
     "--product-name",
     type=str,
+    default=None,
     help="Name of the product to generate the stac item files for",
 )
 @click.option(
