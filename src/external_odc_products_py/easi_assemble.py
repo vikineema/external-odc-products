@@ -10,14 +10,13 @@ from urllib.parse import urlparse
 import boto3
 import rasterio
 import yaml
+from botocore import UNSIGNED
+from botocore.client import Config
 from eodatasets3 import serialise
 from eodatasets3.images import GridSpec, MeasurementBundler
 from eodatasets3.model import AccessoryDoc, DatasetDoc, ProductDoc
 from eodatasets3.properties import Eo3Interface
 from eodatasets3.validate import Level, ValidationExpectations, validate_dataset
-import boto3
-from botocore import UNSIGNED
-from botocore.client import Config
 
 # Uncomment and add logging if and where needed
 # import logging
@@ -329,7 +328,7 @@ class EasiPrepare(Eo3Interface):
         # S3; obtain a list of object keys for the dataset
         if self._dataset_scheme == "s3":
             # client = boto3.client("s3")
-            client = boto3.client('s3', config=Config(signature_version=UNSIGNED))
+            client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
             response = client.list_objects_v2(
                 Bucket=self._dataset_bucket,
                 Prefix=self._dataset_key,

@@ -181,8 +181,8 @@ def create_esa_worldcereal_stac(
         )
 
         # Write the dataset doc to file
-        # to_path(metadata_output_path, dataset_doc)
-        # log.info(f"Wrote dataset to {metadata_output_path}")
+        to_path(metadata_output_path, dataset_doc)
+        log.info(f"Wrote dataset to {metadata_output_path}")
 
         # Convert dataset doc to stac item
         stac_item = to_stac_item(
