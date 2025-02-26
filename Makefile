@@ -72,7 +72,7 @@ download-wapor-soil-moisture-cogs:
 	download-wapor-v3-cogs \
 	--mapset-code="L2-RSM-D" \
 	--output-dir=data/wapor_soil_moisture/ \
-	--overwrite
+	--no-overwrite
 
 # Create stac files for the WaPOR version 3 COGS
 create-wapor-soil-moisture-stac:
