@@ -66,7 +66,7 @@ download-wapor-monthly-npp-cogs:
 	download-wapor-v3-cogs \
 	--mapset-code="L2-NPP-M" \
 	--output-dir=data/wapor_monthly_npp/ \
-	--overwrite
+	--no-overwrite
 
 download-wapor-soil-moisture-cogs:
 	download-wapor-v3-cogs \
