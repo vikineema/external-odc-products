@@ -15,6 +15,9 @@ from eodatasets3.images import GridSpec, MeasurementBundler
 from eodatasets3.model import AccessoryDoc, DatasetDoc, ProductDoc
 from eodatasets3.properties import Eo3Interface
 from eodatasets3.validate import Level, ValidationExpectations, validate_dataset
+import boto3
+from botocore import UNSIGNED
+from botocore.client import Config
 
 # Uncomment and add logging if and where needed
 # import logging
@@ -325,11 +328,12 @@ class EasiPrepare(Eo3Interface):
 
         # S3; obtain a list of object keys for the dataset
         if self._dataset_scheme == "s3":
-            client = boto3.client("s3")
+            # client = boto3.client("s3")
+            client = boto3.client('s3', config=Config(signature_version=UNSIGNED))
             response = client.list_objects_v2(
                 Bucket=self._dataset_bucket,
                 Prefix=self._dataset_key,
-                RequestPayer="requester",  # Make a parameter if/when required
+                # RequestPayer="requester",  # Make a parameter if/when required
             )
             # print(f'Debug: {response}')
             if response["KeyCount"] > 0:
