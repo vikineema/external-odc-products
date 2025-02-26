@@ -1,6 +1,6 @@
 ---
-name: 
-description: esa_worldcereal_wintercereals_tc_wintercereals
+name: esa_worldcereal_wintercereals_tc_wintercereals
+description: "ESA WorldCereal 10 m 2021 v100 wintercereals crop map for the tc-wintercereals season and the related confidence"
 metadata_type: eo3
 license: CC-BY-4.0
 
@@ -12,7 +12,7 @@ measurements:
   - name: "classification"
     dtype: uint8
     nodata: 255
-    units: 1
+    units: "1"
     scale_factor: 1.0
     add_offset: 0.0
   - name: "confidence"
@@ -21,6 +21,3 @@ measurements:
     units: "%"
     scale_factor: 1.0
     add_offset: 0.0
-
-load:
-  crs: EPSG:4326
