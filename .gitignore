@@ -5,3 +5,6 @@
 tmp/**
 data/**
 notebooks/**
+# Ignore mprof outputs
+**/mprof*.png
+**/mprofile*.dat

@@ -91,9 +91,14 @@ download-esa-worldcereal-cogs:
 	--no-overwrite
 
 create-esa-wordlcereal-stac:
-	create-esa-wordlcereal-stac \
-	 --product-name="esa_worldcereal_wintercereals" \
-	 --product-yaml="products/esa_worldcereal_wintercereals.odc-product.yaml" \
-	 --geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
-	 --stac-output-dir="data/esa_worldcereal_sample/eodatasets3_0_30_7" \
-	 --no-overwrite
+	mprof run --include-children \
+    create-esa-wordlcereal-stac \
+		--product-name="esa_worldcereal_wintercereals" \
+		--product-yaml="products/esa_worldcereal_wintercereals.odc-product.yaml" \
+		--geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
+		--stac-output-dir="data/esa_worldcereal_sample/" \
+		--overwrite
+	make plot
+
+plot:
+	mprof plot --output=mprof_plot_$(shell date +%Y-%m-%d_%H-%M-%S).png --flame
