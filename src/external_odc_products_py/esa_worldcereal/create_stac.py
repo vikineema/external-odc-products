@@ -73,7 +73,7 @@ def create_esa_worldcereal_stac(
 
     # Validate products
     valid_product_names = [
-        "esa_worldcereal_wintercereals_tc_wintercereals",
+        "esa_worldcereal_wintercereals",
     ]
     if product_name not in valid_product_names:
         raise NotImplementedError(
