@@ -92,8 +92,8 @@ download-esa-worldcereal-cogs:
 
 create-esa-wordlcereal-stac:
 	create-esa-wordlcereal-stac \
-	 --product-name="esa_worldcereal_wintercereals_tc_wintercereals" \
-	 --product-yaml="products/esa_worldcereal_wintercereals_tc_wintercereals.odc-product.yaml" \
+	 --product-name="esa_worldcereal_wintercereals" \
+	 --product-yaml="esa_worldcereal_wintercereals.odc-product.yaml" \
 	 --geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
 	 --stac-output-dir="data/esa_worldcereal_sample/eodatasets3_0_30_7" \
 	 --no-overwrite

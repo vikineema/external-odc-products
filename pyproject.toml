@@ -20,7 +20,8 @@ dependencies= [
     "rasterio",
     "rioxarray",
     "rio-cogeo",
-    "tqdm"    
+    "tqdm",
+    "yamllint"
 ]
 
 [project.optional-dependencies]
