@@ -1,6 +1,8 @@
 #!make
 SHELL := /usr/bin/env bash
 export GS_NO_SIGN_REQUEST := YES
+include .env
+export
 
 build:
 	docker compose build
@@ -100,5 +102,15 @@ create-esa-wordlcereal-stac:
 		--overwrite
 	make plot
 
+# Index stac files
+index-esa-wordlcereal:
+	docker compose exec jupyter \
+	s3-to-dc s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**.json \
+	--no-sign-request --update-if-exists --allow-unsafe --stac \
+	esa_worldcereal_wintercereals
+
 plot:
 	mprof plot --output=mprof_plot_$(shell date +%Y-%m-%d_%H-%M-%S).png --flame
+
+delete-product:
+	cd workflows/odc-product-delete && ./delete_product.sh
