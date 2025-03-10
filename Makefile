@@ -105,11 +105,11 @@ create-esa-wordlcereal-stac:
 # Index stac files
 index-esa-wordlcereal:
 	docker compose exec jupyter \
-	s3-to-dc s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**.json \
+	s3-to-dc s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**/**/**.stac-item.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	esa_worldcereal_wintercereals
 
-plot:
+mprof-plot:
 	mprof plot --output=mprof_plot_$(shell date +%Y-%m-%d_%H-%M-%S).png --flame
 
 delete-product:
