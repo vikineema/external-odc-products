@@ -10,7 +10,8 @@ services:
     restart: always
 
   jupyter:
-    build: .
+    build:
+      context: .
     environment:
       - DB_HOSTNAME=postgres
       - DB_DATABASE=opendatacube
@@ -26,11 +27,10 @@ services:
       - postgres:postgres
     ports:
       - "9988:9988"
-      - "8091:8080"
     user:
       1000:100
     volumes:
-      - .:/home/jovyan/workspace
+      - ./notebooks:/home/jovyan/workspace/notebooks
     restart: always
 
   checkdb:
