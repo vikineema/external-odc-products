@@ -12,8 +12,6 @@ tmp/**
 data/**
 # Credential files
 **/.env
-# Don't keep notebooks
-notebooks/**
 # Ignore mprof outputs
 **/mprof*.png
 **/mprofile*.dat
