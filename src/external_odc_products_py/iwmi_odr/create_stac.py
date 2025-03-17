@@ -28,9 +28,64 @@ from external_odc_products_py.io import (
 )
 from external_odc_products_py.iwmi_odr.prepare_metadata import prepare_dataset
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.utils import download_product_yaml
+from external_odc_products_py.utils import crs_str_to_int, download_product_yaml
 
 log = get_logger(Path(__file__).stem, level=logging.INFO)
+
+
+def fix_proj_code_property(stac_file: dict) -> dict:
+    """
+    Implement fix for proj code property.
+
+    Parameters
+    ----------
+    stac_file : dict
+        Stac item from converting a dataset doc to stac using
+        `eodatasets3.stac.to_stac_item`
+
+    Returns
+    -------
+    dict
+        Updated stac_item
+    """
+    # Fix proj:code property in properties
+    properties = stac_file["properties"]
+    proj_code = properties.get("proj:code")
+
+    if proj_code:
+        new_properties = {}
+        for k, v in properties.items():
+            if k == "proj:code":
+                new_properties["proj:epsg"] = crs_str_to_int(proj_code)
+            else:
+                new_properties[k] = v
+    else:
+        new_properties = None
+
+    # Update properties
+    if new_properties:
+        stac_file["properties"] = new_properties
+
+    # Fix proj:code property in assets
+    assets = stac_file["assets"]
+    for measurement in assets.keys():
+        measurement_properties = assets[measurement]
+        proj_code = measurement_properties.get("proj:code")
+        if proj_code:
+            new_measurement_properties = {}
+            for k, v in measurement_properties.items():
+                if k == "proj:code":
+                    new_measurement_properties["proj:epsg"] = crs_str_to_int(proj_code)
+                else:
+                    new_measurement_properties[k] = v
+        else:
+            new_measurement_properties = None
+
+        # Update property in assets
+        if new_measurement_properties:
+            stac_file["assets"][measurement] = new_measurement_properties
+
+    return stac_file
 
 
 @click.command(
@@ -183,7 +238,7 @@ def create_stac_files(
         )
 
         # Fix links in stac item
-        stac_item = fix_stac_item(stac_item)
+        stac_item = fix_proj_code_property(stac_item)
 
         # Write stac item
         if is_s3_path(stac_item_destination_url):

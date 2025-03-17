@@ -33,10 +33,9 @@ from external_odc_products_py.utils import crs_str_to_int, download_product_yaml
 log = get_logger(Path(__file__).stem, level=logging.INFO)
 
 
-def fix_stac_item(stac_file: dict) -> dict:
+def fix_proj_code_property(stac_file: dict) -> dict:
     """
-    Implement a few fixes to get the stac item from
-    the metadatadoc to be odc compliant
+    Implement fix for proj code property.
 
     Parameters
     ----------
@@ -67,16 +66,6 @@ def fix_stac_item(stac_file: dict) -> dict:
     if new_properties:
         stac_file["properties"] = new_properties
 
-    # Fix links in assets
-    assets = stac_file["assets"]
-    for measurement in assets.keys():
-        measurement_url = assets[measurement]["href"]
-        if is_gcsfs_path(measurement_url):
-            new_measurement_url = measurement_url.replace(
-                "gs://", "https://storage.googleapis.com/"
-            )
-            stac_file["assets"][measurement]["href"] = new_measurement_url
-
     # Fix proj:code property in assets
     assets = stac_file["assets"]
     for measurement in assets.keys():
@@ -92,7 +81,7 @@ def fix_stac_item(stac_file: dict) -> dict:
         else:
             new_measurement_properties = None
 
-        # Update properties
+        # Update property in assets
         if new_measurement_properties:
             stac_file["assets"][measurement] = new_measurement_properties
 
@@ -264,7 +253,7 @@ def create_stac_files(
         )
 
         # Skip fixing links n stac item for now
-        # stac_item = fix_stac_item(stac_item)
+        stac_item = fix_proj_code_property(stac_item)
 
         # Write stac item
         if is_s3_path(stac_item_destination_url):
