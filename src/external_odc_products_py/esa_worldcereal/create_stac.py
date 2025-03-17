@@ -29,7 +29,11 @@ from external_odc_products_py.utils import (  # noqa F401
 log = get_logger(Path(__file__).stem, level=logging.INFO)
 
 
-@click.command()
+@click.command(
+    "create-stac-files",
+    help="Create per dataset stac files for ESA WorldCereal products.",
+    no_args_is_help=True,
+)
 @click.option(
     "--product-name",
     type=str,
@@ -61,7 +65,7 @@ log = get_logger(Path(__file__).stem, level=logging.INFO)
     type=int,
     help="Sequential index which will be used to define the range of geotiffs the pod will work with.",
 )
-def create_esa_worldcereal_stac(
+def create_stac_files(
     product_name: str,
     product_yaml: str,
     geotiffs_dir: str,

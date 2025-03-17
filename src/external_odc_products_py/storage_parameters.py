@@ -22,7 +22,6 @@ logger = get_logger(Path(__file__).stem, level=logging.INFO)
 @click.option(
     "--product-name",
     type=str,
-    default=None,
     help="Name of the product to generate the stac item files for",
 )
 @click.option(
@@ -41,6 +40,7 @@ def get_storage_parameters(
     geotiffs_dir: str,
     output_dir: str,
 ):
+
     # Geotiffs directory
     if geotiffs_dir:
         # Find all the geotiffs files in the directory
@@ -59,6 +59,7 @@ def get_storage_parameters(
         else:
             raise ValueError("No file path to the directory containing the COG files provided")
 
+    logger.info(f"Found {len(geotiffs_file_paths)} geotiff files")
     storage_parameters_list = []
 
     for file_path in tqdm(iterable=geotiffs_file_paths, total=len(geotiffs_file_paths)):

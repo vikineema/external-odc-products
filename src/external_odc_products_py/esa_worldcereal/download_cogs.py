@@ -163,7 +163,11 @@ def create_and_upload_cog(img_path: str, output_path: str):
         log.info(f"File {output_path} cloud optimised successfully")
 
 
-@click.command()
+@click.command(
+    "download-cogs",
+    help="Download ESA WorldCereal product cogs for AEZ regions within" "Africa's bounding box.",
+    no_args_is_help=True,
+)
 @click.option(
     "--year", required=True, default="2021", type=click.Choice(VALID_YEARS, case_sensitive=False)
 )
@@ -175,7 +179,7 @@ def create_and_upload_cog(img_path: str, output_path: str):
     help="Directory to write the cropped COG files to",
 )
 @click.option("--overwrite/--no-overwrite", default=False)
-def download_esa_worldcereal_cogs(
+def download_cogs(
     year,
     season,
     product,
