@@ -122,7 +122,7 @@ def fix_assets_links(stac_file: dict) -> dict:
 
 @click.command(
     "create-stac-files",
-    help="Create per dataset stac files for WaPOR v3 products.",
+    help="Create per dataset metadata (stac files) for WaPOR v3 products.",
     no_args_is_help=True,
 )
 @click.option(

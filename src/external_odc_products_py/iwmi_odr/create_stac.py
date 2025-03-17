@@ -1,3 +1,10 @@
+"""
+Create per dataset metadata (stac files) for the IWMI ODR
+products.
+
+Datasource:
+"""
+
 import json
 import logging
 import os
@@ -10,7 +17,6 @@ from eodatasets3.serialise import to_path  # noqa F401
 from eodatasets3.stac import to_stac_item
 from odc.aws import s3_dump
 
-from external_odc_products_py import iwmi_odr_metadata, wapor_v3_metadata
 from external_odc_products_py.io import (
     check_directory_exists,
     check_file_exists,
@@ -20,13 +26,18 @@ from external_odc_products_py.io import (
     is_s3_path,
     is_url,
 )
+from external_odc_products_py.iwmi_odr.prepare_metadata import prepare_dataset
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.utils import download_product_yaml, fix_stac_item
+from external_odc_products_py.utils import download_product_yaml
 
 log = get_logger(Path(__file__).stem, level=logging.INFO)
 
 
-@click.command()
+@click.command(
+    "create-stac-files",
+    help="Create per dataset metadata (stac files) for IWMI ODR products.",
+    no_args_is_help=True,
+)
 @click.option(
     "--product-name",
     type=str,
@@ -38,7 +49,6 @@ log = get_logger(Path(__file__).stem, level=logging.INFO)
 @click.option(
     "--geotiffs-dir",
     type=str,
-    default=None,
     help="File path to the directory containing the COG files",
 )
 @click.option(
@@ -73,8 +83,6 @@ def create_stac_files(
     valid_product_names = [
         "iwmi_blue_et_monthly",
         "iwmi_green_et_monthly",
-        "wapor_soil_moisture",
-        "wapor_monthly_npp",
     ]
     if product_name not in valid_product_names:
         raise NotImplementedError(
@@ -100,26 +108,9 @@ def create_stac_files(
     if product_name not in os.path.basename(stac_output_dir.rstrip("/")):
         stac_output_dir = os.path.join(stac_output_dir, product_name)
 
-    # Geotiffs directory
-    if geotiffs_dir:
-        # Find all the geotiffs files in the directory
-        all_geotiff_files = find_geotiff_files(geotiffs_dir)
-        log.info(f"Found {len(all_geotiff_files)} geotiffs in {geotiffs_dir}")
-    else:
-        if product_name.startswith("wapor"):
-            # WaPOR version 3 mapset code for the product
-            if product_name == "wapor_soil_moisture":
-                mapset_code = "L2-RSM-D"
-            elif product_name == "wapor_monthly_npp":
-                mapset_code = "L2-NPP-M"
-
-            all_geotiff_files = wapor_v3_metadata.get_mapset_rasters(mapset_code)
-            # Use a gsutil URI instead of the public URL
-            all_geotiff_files = [
-                i.replace("https://storage.googleapis.com/", "gs://") for i in all_geotiff_files
-            ]
-        else:
-            raise ValueError("No file path to the directory containing the COG files provided")
+    # Find all the geotiffs files in the directory
+    all_geotiff_files = find_geotiff_files(geotiffs_dir)
+    log.info(f"Found {len(all_geotiff_files)} geotiffs in {geotiffs_dir}")
 
     # Split files equally among the workers
     task_chunks = np.array_split(np.array(all_geotiff_files), max_parallel_steps)
@@ -149,23 +140,10 @@ def create_stac_files(
 
         tile_id = os.path.basename(dataset_path).removesuffix(".tif")
 
-        if product_name.startswith("wapor"):
-            try:
-                year, month, _ = tile_id.split(".")[-1].split("-")
-            except ValueError:
-                year, month = tile_id.split(".")[-1].split("-")
-
-            metadata_output_path = Path(
-                os.path.join(metadata_output_dir, year, month, f"{tile_id}.odc-metadata.yaml")
-            ).resolve()
-            stac_item_destination_url = os.path.join(
-                stac_output_dir, year, month, f"{tile_id}.stac-item.json"
-            )
-        else:
-            metadata_output_path = Path(
-                os.path.join(metadata_output_dir, f"{tile_id}.odc-metadata.yaml")
-            ).resolve()
-            stac_item_destination_url = os.path.join(stac_output_dir, f"{tile_id}.stac-item.json")
+        metadata_output_path = Path(
+            os.path.join(metadata_output_dir, f"{tile_id}.odc-metadata.yaml")
+        ).resolve()
+        stac_item_destination_url = os.path.join(stac_output_dir, f"{tile_id}.stac-item.json")
 
         # Check if the stac item exist:
         if not overwrite:
@@ -189,18 +167,11 @@ def create_stac_files(
             log.info(f"Created the directory {stac_item_parent_dir}")
 
         # Prepare the dataset's metadata doc
-        if product_name.startswith("iwmi"):
-            dataset_doc = iwmi_odr_metadata.prepare_dataset(
-                dataset_path=dataset_path,
-                product_yaml=product_yaml,
-                output_path=metadata_output_path,
-            )
-        elif product_name.startswith("wapor"):
-            dataset_doc = wapor_v3_metadata.prepare_dataset(
-                dataset_path=dataset_path,
-                product_yaml=product_yaml,
-                output_path=metadata_output_path,
-            )
+        dataset_doc = prepare_dataset(
+            dataset_path=dataset_path,
+            product_yaml=product_yaml,
+            output_path=metadata_output_path,
+        )
 
         # Write the dataset doc to file
         # to_path(metadata_output_path, dataset_doc)

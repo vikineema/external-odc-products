@@ -101,7 +101,7 @@ def fix_stac_item(stac_file: dict) -> dict:
 
 @click.command(
     "create-stac-files",
-    help="Create per dataset stac files for ESA WorldCereal products.",
+    help="Create per dataset metadata (stac files) for ESA WorldCereal products.",
     no_args_is_help=True,
 )
 @click.option(
