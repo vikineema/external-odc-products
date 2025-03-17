@@ -1,7 +1,8 @@
 """
-Download the WaPOR version 3 mapset rasters and ,
+Download the WaPOR version 3 mapset rasters ,
 convert to Cloud Optimized Geotiff, and push to an S3 bucket.
 
+Datasource: gs://fao-gismgr-wapor-3-data/DATA/WAPOR-3/MAPSET
 """
 
 import logging
@@ -22,7 +23,7 @@ from external_odc_products_py.io import (
     is_s3_path,
 )
 from external_odc_products_py.logs import get_logger
-from external_odc_products_py.wapor_v3_metadata import get_mapset_rasters
+from external_odc_products_py.wapor_v3.prepare_metadata import get_mapset_rasters
 
 LOCAL_DOWNLOAD_DIR = "tmp/wapor_v3"
 
@@ -104,7 +105,11 @@ def crop_and_upload_cog(img_path: str, output_path: str):
         log.info(f"File {output_path} cloud optimised successfully")
 
 
-@click.command()
+@click.command(
+    "download-cogs",
+    help="Download the WaPOR version 3 mapset rasters.",
+    no_args_is_help=True,
+)
 @click.option(
     "--mapset-code",
     type=str,
@@ -129,7 +134,7 @@ def crop_and_upload_cog(img_path: str, output_path: str):
     type=int,
     help="Sequential index which will be used to define the range of geotiffs the pod will work with.",
 )
-def download_wapor_v3_cogs(
+def download_cogs(
     mapset_code: str, output_dir: str, overwrite: bool, max_parallel_steps: int, worker_idx: int
 ):
 

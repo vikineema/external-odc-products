@@ -36,6 +36,7 @@ lint = [
 
 [project.scripts]
 esa-worldcereal = "external_odc_products_py.esa_worldcereal.main:esa_worldcereal"
+wapor-v3 = "external_odc_products_py.wapor_v3.main:wapor_v3"
 
 [tool.isort]
 profile = "black"

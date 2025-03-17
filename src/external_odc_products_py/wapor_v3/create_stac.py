@@ -1,8 +1,8 @@
 """
-Create per dataset metadata (stac files) for the ESA WorldCereal 10 m
-2021 v100 products' COGs.
+Create per dataset metadata (stac files) for WaPOR version 3
+mapsets (products) COGs.
 
-Datasource: https://zenodo.org/records/7875105
+Datasource: gs://fao-gismgr-wapor-3-data/DATA/WAPOR-3/MAPSET
 """
 
 import json
@@ -17,7 +17,6 @@ from eodatasets3.serialise import to_path  # noqa F401
 from eodatasets3.stac import to_stac_item
 from odc.aws import s3_dump
 
-from external_odc_products_py.esa_worldcereal.prepare_metadata import prepare_dataset
 from external_odc_products_py.io import (
     check_directory_exists,
     check_file_exists,
@@ -29,14 +28,17 @@ from external_odc_products_py.io import (
 )
 from external_odc_products_py.logs import get_logger
 from external_odc_products_py.utils import crs_str_to_int, download_product_yaml
+from external_odc_products_py.wapor_v3.prepare_metadata import (
+    get_mapset_rasters,
+    prepare_dataset,
+)
 
 log = get_logger(Path(__file__).stem, level=logging.INFO)
 
 
-def fix_stac_item(stac_file: dict) -> dict:
+def fix_proj_code_property(stac_file: dict) -> dict:
     """
-    Implement a few fixes to get the stac item from
-    the metadatadoc to be odc compliant
+    Implement fix for proj code property.
 
     Parameters
     ----------
@@ -67,16 +69,6 @@ def fix_stac_item(stac_file: dict) -> dict:
     if new_properties:
         stac_file["properties"] = new_properties
 
-    # Fix links in assets
-    assets = stac_file["assets"]
-    for measurement in assets.keys():
-        measurement_url = assets[measurement]["href"]
-        if is_gcsfs_path(measurement_url):
-            new_measurement_url = measurement_url.replace(
-                "gs://", "https://storage.googleapis.com/"
-            )
-            stac_file["assets"][measurement]["href"] = new_measurement_url
-
     # Fix proj:code property in assets
     assets = stac_file["assets"]
     for measurement in assets.keys():
@@ -92,16 +84,45 @@ def fix_stac_item(stac_file: dict) -> dict:
         else:
             new_measurement_properties = None
 
-        # Update properties
+        # Update property in assets
         if new_measurement_properties:
             stac_file["assets"][measurement] = new_measurement_properties
 
     return stac_file
 
 
+def fix_assets_links(stac_file: dict) -> dict:
+    """
+    Fix assets' links to point from gsutil URI to
+    public URL
+
+    Parameters
+    ----------
+    stac_file : dict
+        Stac item from converting a dataset doc to stac using
+        `eodatasets3.stac.to_stac_item`
+
+    Returns
+    -------
+    dict
+        Updated stac_item
+    """
+    # Fix links in assets
+    assets = stac_file["assets"]
+    for measurement in assets.keys():
+        measurement_url = assets[measurement]["href"]
+        if is_gcsfs_path(measurement_url):
+            new_measurement_url = measurement_url.replace(
+                "gs://", "https://storage.googleapis.com/"
+            )
+            stac_file["assets"][measurement]["href"] = new_measurement_url
+
+    return stac_file
+
+
 @click.command(
     "create-stac-files",
-    help="Create per dataset stac files for ESA WorldCereal products.",
+    help="Create per dataset stac files for WaPOR v3 products.",
     no_args_is_help=True,
 )
 @click.option(
@@ -115,6 +136,7 @@ def fix_stac_item(stac_file: dict) -> dict:
 @click.option(
     "--geotiffs-dir",
     type=str,
+    default=None,
     help="File path to the directory containing the COG files",
 )
 @click.option(
@@ -147,15 +169,18 @@ def create_stac_files(
 
     # Validate products
     valid_product_names = [
-        "esa_worldcereal_wintercereals",
+        "wapor_soil_moisture",
+        "wapor_monthly_npp",
     ]
     if product_name not in valid_product_names:
         raise NotImplementedError(
-            f"Stac file generation has not been implemented for ESA World Cereal product {product_name}"
+            f"Stac file generation has not been implemented for {product_name}"
         )
 
     # Set to temporary dir as output metadata yaml files are not required.
-    metadata_output_dir = "tmp/metadata_docs/esa_worldcereal"
+    metadata_output_dir = "tmp/metadata_docs"
+    if product_name not in os.path.basename(metadata_output_dir.rstrip("/")):
+        metadata_output_dir = os.path.join(metadata_output_dir, product_name)
 
     if is_s3_path(metadata_output_dir):
         raise RuntimeError("Metadata files require to be written to a local directory")
@@ -167,18 +192,36 @@ def create_stac_files(
     else:
         NotImplemented("Product yaml is expected to be a local file or url not s3 path")
 
+    # Directory to write the stac files to
+    if product_name not in os.path.basename(stac_output_dir.rstrip("/")):
+        stac_output_dir = os.path.join(stac_output_dir, product_name)
+
     # Geotiffs directory
     if geotiffs_dir:
-        # Each dataset path is a folder with 2 geotiffs one for the classification measurement
-        # and one for the confidence measurement
+        # Find all the geotiffs files in the directory
         all_geotiff_files = find_geotiff_files(geotiffs_dir)
-        all_dataset_paths = list(set([os.path.dirname(i) for i in all_geotiff_files]))
-        log.info(f"Found {len(all_dataset_paths)} datasets")
+        log.info(f"Found {len(all_geotiff_files)} geotiffs in {geotiffs_dir}")
     else:
-        raise ValueError("No file path to the directory containing the COG files provided")
+        # WaPOR version 3 mapset code for the product
+        if product_name == "wapor_soil_moisture":
+            mapset_code = "L2-RSM-D"
+        elif product_name == "wapor_monthly_npp":
+            mapset_code = "L2-NPP-M"
+        else:
+            raise ValueError(
+                "No file path to the directory containing the "
+                "COG files or the mapset code for the product "
+                f"{product_name} provided"
+            )
+
+        all_geotiff_files = get_mapset_rasters(mapset_code)
+        # Use a gsutil URI instead of the public URL
+        all_geotiff_files = [
+            i.replace("https://storage.googleapis.com/", "gs://") for i in all_geotiff_files
+        ]
 
     # Split files equally among the workers
-    task_chunks = np.array_split(np.array(all_dataset_paths), max_parallel_steps)
+    task_chunks = np.array_split(np.array(all_geotiff_files), max_parallel_steps)
     task_chunks = [chunk.tolist() for chunk in task_chunks]
     task_chunks = list(filter(None, task_chunks))
 
@@ -189,45 +232,35 @@ def create_stac_files(
 
     log.info(f"Executing worker {worker_idx}")
 
-    dataset_paths = task_chunks[worker_idx]
+    geotiffs = task_chunks[worker_idx]
 
     log.info(f"Generating stac files for the product {product_name}")
 
-    for idx, dataset_path in enumerate(dataset_paths):
-        log.info(f"Generating stac file for {dataset_path} {idx+1}/{len(dataset_paths)}")
+    for idx, geotiff in enumerate(geotiffs):
+        log.info(f"Generating stac file for {geotiff} {idx+1}/{len(geotiffs)}")
 
         # File system Path() to the dataset
         # or gsutil URI prefix  (gs://bucket/key) to the dataset.
-        if not is_s3_path(dataset_path) and not is_gcsfs_path(dataset_path):
-            dataset_path = Path(dataset_path).resolve()
+        if not is_s3_path(geotiff) and not is_gcsfs_path(geotiff):
+            dataset_path = Path(geotiff).resolve()
         else:
-            dataset_path = dataset_path
+            dataset_path = geotiff
 
-        # Find the measurement geotiff files in the dataset path
-        measurement_files = find_geotiff_files(dataset_path)
-        # AEZ-based GeoTIFF files inside are named according to following convention
-        # {AEZ_id}_{season}_{product}_{startdate}_{enddate}_{classification|confidence}.tif
-        AEZ_id, season, product, startdate, enddate, _ = (
-            os.path.basename(measurement_files[0]).removesuffix(".tif").split("_")
-        )
+        tile_id = os.path.basename(dataset_path).removesuffix(".tif")
 
-        # Get the year from the dataset_path.
-        file_path_parts = os.path.normpath(dataset_path).split(os.sep)
-        file_path_parts.reverse()
-        year, *_ = file_path_parts
+        try:
+            year, month, _ = tile_id.split(".")[-1].split("-")
+        except ValueError:
+            year, month = tile_id.split(".")[-1].split("-")
 
-        # Expected file and dir structure
-        tile_id = f"{AEZ_id}_{season}_{product}_{startdate}_{enddate}"
         metadata_output_path = Path(
-            os.path.join(
-                metadata_output_dir, product, season, AEZ_id, year, f"{tile_id}.odc-metadata.yaml"
-            )
+            os.path.join(metadata_output_dir, year, month, f"{tile_id}.odc-metadata.yaml")
         ).resolve()
         stac_item_destination_url = os.path.join(
-            stac_output_dir, product, season, AEZ_id, year, f"{tile_id}.stac-item.json"
+            stac_output_dir, year, month, f"{tile_id}.stac-item.json"
         )
 
-        # Check if the stac item exists
+        # Check if the stac item exist:
         if not overwrite:
             if check_file_exists(stac_item_destination_url):
                 log.info(
@@ -255,16 +288,17 @@ def create_stac_files(
         )
 
         # Write the dataset doc to file
-        to_path(metadata_output_path, dataset_doc)
-        log.info(f"Wrote dataset to {metadata_output_path}")
+        # to_path(metadata_output_path, dataset_doc)
+        # log.info(f"Wrote dataset to {metadata_output_path}")
 
         # Convert dataset doc to stac item
         stac_item = to_stac_item(
             dataset=dataset_doc, stac_item_destination_url=str(stac_item_destination_url)
         )
 
-        # Skip fixing links n stac item for now
-        # stac_item = fix_stac_item(stac_item)
+        # Fix links in stac item
+        stac_item = fix_proj_code_property(stac_item)
+        stac_item = fix_assets_links(stac_item)
 
         # Write stac item
         if is_s3_path(stac_item_destination_url):
