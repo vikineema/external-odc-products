@@ -45,30 +45,24 @@ shell:
 add-products:
 	docker compose exec jupyter bash -c "cd /home/jovyan/workspace && bash workflows/add_products.sh products"
 
-get-storage-parameters:
-	get-storage-parameters \
-	--geotiffs-dir=data/esa_worldcereal_sample/wintercereals \
-	--output-dir="tmp/storage_parameters/" 
-
-
 ## WaPOR v3
 
 # Download and crop WaPOR version 3 GeoTIFFs
 download-wapor-monthly-npp-cogs:
-	download-wapor-v3-cogs \
+	wapor-v3 download-cogs \
 	--mapset-code="L2-NPP-M" \
 	--output-dir=data/wapor_monthly_npp/ \
 	--no-overwrite
 
 download-wapor-soil-moisture-cogs:
-	download-wapor-v3-cogs \
+	wapor-v3 download-cogs \
 	--mapset-code="L2-RSM-D" \
 	--output-dir=data/wapor_soil_moisture/ \
 	--no-overwrite
 
 # Create stac files for the WaPOR version 3 COGS
 create-wapor-soil-moisture-stac:
-	create-stac-files \
+	wapor-v3 create-stac-files \
 	 --product-name="wapor_soil_moisture" \
 	 --product-yaml="products/wapor_soil_moisture.odc-product.yaml" \
 	 --stac-output-dir="s3://wapor-v3/wapor_soil_moisture/" \
@@ -85,7 +79,7 @@ index-wapor-soil-moisture:
 ## ESA WorldCereal
 
 download-esa-worldcereal-cogs:
-	download-esa-worldcereal-cogs \
+	esa-wordlcereal download-cogs \
 	--year="2021" \
 	--season="tc-wintercereals" \
 	--product="wintercereals" \
@@ -94,7 +88,7 @@ download-esa-worldcereal-cogs:
 
 create-esa-wordlcereal-stac:
 	mprof run --include-children \
-    create-esa-wordlcereal-stac \
+    esa-wordlcereal create-stac-files \
 		--product-name="esa_worldcereal_wintercereals" \
 		--product-yaml="products/esa_worldcereal_wintercereals.odc-product.yaml" \
 		--geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
@@ -111,6 +105,24 @@ index-esa-wordlcereal:
 
 mprof-plot:
 	mprof plot --output=mprof_plot_$(shell date +%Y-%m-%d_%H-%M-%S).png --flame
+
+## Sentinel-3
+get-storage-parameters-s3_olci_lfr:
+	get-storage-parameters \
+	--product-name=s3_olci_lfr \
+	--geotiffs-dir=s3://deafrica-sentinel-3-dev/Sentinel-3/OLCI/OL_2_LFR/2025/01/ \
+	--output-dir=tmp/storage_parameters 
+
+index-s3_olci_lfr-s3:
+	docker compose exec jupyter \
+	s3-to-dc s3://deafrica-sentinel-3-dev/Sentinel-3/OLCI/OL_2_LFR/2025/01/**/**.json \
+	--no-sign-request --update-if-exists --allow-unsafe --stac \
+	s3_olci_lfr
+
+index-s3_olci_lfr:
+	docker compose exec jupyter \
+	fs-to-dc /home/jovyan/workspace/data/s3_olci_lfr/ \
+	--update-if-exists --allow-unsafe --stac  \
 
 delete-product:
 	cd workflows/odc-product-delete && ./delete_product.sh

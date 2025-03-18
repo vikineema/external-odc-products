@@ -27,10 +27,8 @@ services:
       - postgres:postgres
     ports:
       - "9988:9988"
-    user:
-      1000:100
     volumes:
-      - .:/home/jovyan/workspace/
+      - .:/home/jovyan/workspace
     restart: always
 
   checkdb:
