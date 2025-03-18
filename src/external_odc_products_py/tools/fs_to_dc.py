@@ -7,8 +7,6 @@ import click
 import datacube
 import yaml
 from datacube.index.hl import Doc2Dataset
-from datacube.ui.click import environment_option, pass_config
-from odc.apps.dc_tools._stac import stac_transform
 from odc.apps.dc_tools.utils import (
     allow_unsafe,
     archive_less_mature,
@@ -20,6 +18,8 @@ from odc.apps.dc_tools.utils import (
     update_if_exists_flag,
 )
 
+from external_odc_products_py.stac_to_eo3 import stac_transform
+
 logging.basicConfig(
     level=logging.WARNING,
     format="%(asctime)s: %(levelname)s: %(message)s",
@@ -28,8 +28,6 @@ logging.basicConfig(
 
 
 @click.command("fs-to-dc")
-@environment_option
-@pass_config
 @click.argument("input_directory", type=str, nargs=1)
 @update_if_exists_flag
 @allow_unsafe
@@ -44,7 +42,6 @@ logging.basicConfig(
 )
 @click.argument("product", type=str, nargs=1, required=False)
 def cli(
-    cfg_env,
     input_directory,
     update_if_exists,
     allow_unsafe,
@@ -62,7 +59,7 @@ def cli(
     Can provide a single product name or a space separated list of multiple products
     (formatted as a single string).
     """
-    dc = datacube.Datacube(env=cfg_env)
+    dc = datacube.Datacube()
 
     # Check datacube connection and products
     candidate_products = product.split()
