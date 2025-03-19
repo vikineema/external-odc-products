@@ -95,7 +95,7 @@ def dump_to_odc(
     return ds_added, ds_failed, ds_skipped
 
 
-@click.command("s3-to-dc")
+@click.command("s3-to-dc-v2")
 @click.option(
     "--log",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),

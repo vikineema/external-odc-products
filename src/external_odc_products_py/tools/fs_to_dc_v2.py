@@ -1,3 +1,14 @@
+"""
+Build local filesystem iterators using odc-tools
+and index datasets found into RDS
+
+Adapted from
+https://github.com/opendatacube/odc-tools/blob/develop/apps/dc_tools/odc/apps/dc_tools/_stac.py
+https://github.com/opendatacube/odc-tools/blob/develop/apps/dc_tools/odc/apps/dc_tools/fs_to_dc.py
+
+to support  https://stac-extensions.github.io/projection/v2.0.0/schema.json
+"""
+
 import json
 import logging
 import sys
@@ -27,7 +38,7 @@ logging.basicConfig(
 )
 
 
-@click.command("fs-to-dc")
+@click.command("fs-to-dc-v2")
 @click.argument("input_directory", type=str, nargs=1)
 @update_if_exists_flag
 @allow_unsafe
