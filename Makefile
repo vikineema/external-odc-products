@@ -86,6 +86,20 @@ download-esa-worldcereal-cogs:
 	--output-dir=data/esa_worldcereal_sample/  \
 	--no-overwrite
 
+get-storage-parameters-esa_worldcereal_wintercereals-1:
+	get-storage-parameters \
+	--product-name=esa_worldcereal_wintercereals_classification \
+	--geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
+	--pattern=''.*classification\\.tif$' \
+	--output-dir="tmp/storage_parameters"
+
+get-storage-parameters-esa_worldcereal_wintercereals-2:
+	get-storage-parameters \
+	--product-name=esa_worldcereal_wintercereals_confidence \
+	--geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
+	--pattern=''.*confidence\\.tif$' \
+	--output-dir="tmp/storage_parameters"
+
 create-esa-wordlcereal-stac:
 	mprof run --include-children \
     esa-wordlcereal create-stac-files \
@@ -99,7 +113,7 @@ create-esa-wordlcereal-stac:
 # Index stac files
 index-esa-wordlcereal:
 	docker compose exec jupyter \
-	s3-to-dc s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**/**/**.stac-item.json \
+	indexing-tools s3-to-dc s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**/**/**.stac-item.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	esa_worldcereal_wintercereals
 

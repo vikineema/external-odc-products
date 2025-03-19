@@ -31,6 +31,12 @@ logger = get_logger(Path(__file__).stem, level=logging.INFO)
     help="File path to the directory containing the COG files",
 )
 @click.option(
+    "--pattern",
+    type=str,
+    default=".*",
+    help="Pattern to use when searching for COGs in" " the directory provided to --geotiffs-dir ",
+)
+@click.option(
     "--output-dir",
     type=str,
     help="Directory to write the unique storage parameters text file to",
@@ -38,13 +44,14 @@ logger = get_logger(Path(__file__).stem, level=logging.INFO)
 def get_storage_parameters(
     product_name: str,
     geotiffs_dir: str,
+    pattern: str,
     output_dir: str,
 ):
 
     # Geotiffs directory
     if geotiffs_dir:
         # Find all the geotiffs files in the directory
-        geotiffs_file_paths = find_geotiff_files(geotiffs_dir)
+        geotiffs_file_paths = find_geotiff_files(geotiffs_dir, pattern)
     else:
         if product_name.startswith("wapor"):
             if product_name == "wapor_soil_moisture":
