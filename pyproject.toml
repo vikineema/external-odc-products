@@ -40,7 +40,7 @@ esa-worldcereal = "external_odc_products_py.esa_worldcereal.main:esa_worldcereal
 wapor-v3 = "external_odc_products_py.wapor_v3.main:wapor_v3"
 iwmi-odr = "external_odc_products_py.iwmi_odr.main:iwmi_odr"
 get-storage-parameters = "external_odc_products_py.storage_parameters:get_storage_parameters"
-indexing-tools = "external_odc_products_py.tools.main:indexing_tools"
+s3-to-dc-v2 = "external_odc_products_py.tools.s3_to_dc_v2:cli"
 
 [tool.isort]
 profile = "black"

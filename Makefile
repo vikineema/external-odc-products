@@ -71,13 +71,17 @@ create-wapor-soil-moisture-stac:
 # Index stac files
 index-wapor-soil-moisture:
 	docker compose exec jupyter \
-	s3-to-dc s3://wapor-v3/wapor_soil_moisture/**/**.json \
+	s3-to-dc-v2 s3://wapor-v3/wapor_soil_moisture/**/**.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	wapor_soil_moisture
 
+#  Copy stac files from s3
+copy-wapor_soil_moisture:
+	aws s3 cp --recursive --no-sign-request --include "*.json" --exclude "*.tif" \
+	s3://wapor-v3/wapor_soil_moisture/   \
+	data/wapor_soil_moisture/
 
 ## ESA WorldCereal
-
 download-esa-worldcereal-cogs:
 	esa-wordlcereal download-cogs \
 	--year="2021" \
@@ -113,7 +117,7 @@ create-esa-wordlcereal-stac:
 # Index stac files
 index-esa-wordlcereal:
 	docker compose exec jupyter \
-	indexing-tools s3-to-dc s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**/**/**.stac-item.json \
+	s3-to-dc-v2 s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**/**/**.stac-item.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	esa_worldcereal_wintercereals
 
@@ -121,22 +125,43 @@ mprof-plot:
 	mprof plot --output=mprof_plot_$(shell date +%Y-%m-%d_%H-%M-%S).png --flame
 
 ## Sentinel-3
-get-storage-parameters-s3_olci_lfr:
+get-storage-parameters-s3_olci_l2_lfr:
 	get-storage-parameters \
-	--product-name=s3_olci_lfr \
+	--product-name=s3_olci_l2_lfr_GIFAPAR \
 	--geotiffs-dir=s3://deafrica-sentinel-3-dev/Sentinel-3/OLCI/OL_2_LFR/2025/01/ \
+	--pattern=''.*GIFAPAR\\.tif$' \
 	--output-dir=tmp/storage_parameters 
 
-index-s3_olci_lfr-s3:
+index-s3_olci_l2_lfr:
 	docker compose exec jupyter \
-	s3-to-dc s3://deafrica-sentinel-3-dev/Sentinel-3/OLCI/OL_2_LFR/2025/01/**/**.json \
+	s3-to-dc-v2 s3://deafrica-sentinel-3-dev/Sentinel-3/OLCI/OL_2_LFR/2025/**/**.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
-	s3_olci_lfr
+	s3_olci_l2_lfr
 
-index-s3_olci_lfr:
-	docker compose exec jupyter \
-	fs-to-dc /home/jovyan/workspace/data/s3_olci_lfr/ \
-	--update-if-exists --allow-unsafe --stac  \
+copy-s3_olci_l2_lfr:
+	aws s3 cp --recursive --no-sign-request --include "*.json" --exclude "*.tif" \
+	s3://deafrica-sentinel-3-dev/Sentinel-3/OLCI/OL_2_LFR/2025/   \
+	data/s3_olci_l2_lfr/
 
 delete-product:
+	export PRODUCT_NAME=s3_olci_l2_lfr
 	cd workflows/odc-product-delete && ./delete_product.sh
+
+
+## IMWI ODR
+copy-iwmi_blue_et_monthly:
+	aws s3 cp --recursive --no-sign-request --include "*.json" --exclude "*.tif" \
+	s3://iwmi-datasets/Water_accounting_plus/Africa/Incremental_ET_M/   \
+	data/iwmi_blue_et_monthly/
+
+index-iwmi_blue_et_monthly:
+	docker compose exec jupyter \
+		s3-to-dc-v2 s3://iwmi-datasets/Water_accounting_plus/Africa/Incremental_ET_M/**.json \
+		--no-sign-request --update-if-exists --allow-unsafe --stac \
+		iwmi_blue_et_monthly
+
+index-iwmi_green_et_monthly:
+	docker compose exec jupyter \
+		s3-to-dc-v2 s3://iwmi-datasets/Water_accounting_plus/Africa/Rainfall_ET_M/**.json \
+		--no-sign-request --update-if-exists --allow-unsafe --stac \
+		iwmi_green_et_monthly
