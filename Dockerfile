@@ -6,12 +6,14 @@ ARG NB_USER="jovyan"
 ARG NB_UID="1000"
 ARG NB_GID="100"
 
+# Jupyter config
 USER root
-COPY jupyter_lab_config.py /etc/jupyter/
+COPY jupyter_lab_config.py $VIRTUAL_ENV/etc/jupyter/
+
+# Install code 
 RUN mkdir -p $HOME/workspace
 COPY . $HOME/workspace
 RUN chown -R $NB_UID:$NB_GID $HOME/workspace
 
 USER $NB_USER
-RUN pip install -e $HOME/workspace
-WORKDIR $HOME/workspace
+WORKDIR $HOME

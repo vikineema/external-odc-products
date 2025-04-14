@@ -6,7 +6,7 @@ services:
       - POSTGRES_PASSWORD=opendatacubepassword
       - POSTGRES_USER=opendatacube
     ports:
-      - 5433:5432
+      - 5432:5432
     restart: always
 
   jupyter:
@@ -29,7 +29,7 @@ services:
     ports:
       - "9988:9988"
     volumes:
-      - .:/home/jovyan/workspace
+      - .:/home/jovyan/
     restart: always
 
   checkdb:

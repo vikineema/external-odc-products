@@ -1,53 +1,58 @@
 #!make
 SHELL := /usr/bin/env bash
 export GS_NO_SIGN_REQUEST := YES
-include .env
-export
+
+setup: up init install-python-pkgs
 
 build:
 	docker compose build
 
-fix-file-permissions:
-	docker compose exec -it jupyter sudo chown -R 1000:100 /home/jovyan/workspace
-
-setup-explorer:
-	# Initialise and create product summaries
-	docker compose up -d explorer
-	docker compose exec -T explorer cubedash-gen --init --all
-	# Do not run this below it messes up the configuration
-	# http://localhost:8080/products
-	# docker compose exec -T explorer cubedash-run #--port 8081
-
-get-jupyter-token:
-	docker compose exec -T jupyter jupyter notebook list
-
-init: ## Prepare the database
-	docker compose exec -T jupyter datacube -v system init
-
+## Environment setup
 up: ## Bring up your Docker environment
 	docker compose up -d postgres
 	docker compose run checkdb
 	docker compose up -d jupyter
-	# make fix-file-permissions
-	# docker compose up -d explorer
-	make init
-	make add-products
 
-down:
+down: ## Bring down your Docker environment
 	docker compose down --remove-orphans
 
-logs:
-	docker compose logs
+logs: ## View logs for all services
+	docker compose logs 
 
-shell:
-	docker compose exec jupyter bash -c "cd /home/jovyan/workspace && exec bash"
+init: ## Prepare the database
+	docker compose exec -T jupyter datacube -v system init
+	
+install-python-pkgs:
+	docker compose exec jupyter bash -c "cd /home/jovyan && pip install -e ."
 
 add-products:
 	docker compose exec jupyter bash -c "cd /home/jovyan/workspace && bash workflows/add_products.sh products"
 
-## WaPOR v3
+mprof-plot:
+	mprof plot --output=mprof_plot_$(shell date +%Y-%m-%d_%H-%M-%S).png --flame
 
-# Download and crop WaPOR version 3 GeoTIFFs
+## Jupyter service
+get-jupyter-token: ## View the secret token for jupyterlab
+	## Also available in .local/share/jupyter/runtime/jupyter_cookie_secret
+	docker compose exec -T jupyter jupyter lab list
+
+jupyter-shell: ## Open shell in jupyter service
+	docker compose exec jupyter /bin/bash
+
+
+## Postgres service
+db-shell:
+	PGPASSWORD=opendatacubepassword \
+	pgcli -h localhost -p 5434 -U opendatacube -d postgres
+
+## Explorer
+setup-explorer: ## Setup the datacube explorer
+	# Initialise and create product summaries
+	docker compose up -d explorer
+	docker compose exec -T explorer cubedash-gen --init --all
+	# Services available on http://localhost:8080/products
+
+## WaPOR v3
 download-wapor-monthly-npp-cogs:
 	wapor-v3 download-cogs \
 	--mapset-code="L2-NPP-M" \
@@ -60,7 +65,6 @@ download-wapor-soil-moisture-cogs:
 	--output-dir=data/wapor_soil_moisture/ \
 	--no-overwrite
 
-# Create stac files for the WaPOR version 3 COGS
 create-wapor-soil-moisture-stac:
 	wapor-v3 create-stac-files \
 	 --product-name="wapor_soil_moisture" \
@@ -68,14 +72,12 @@ create-wapor-soil-moisture-stac:
 	 --stac-output-dir="s3://wapor-v3/wapor_soil_moisture/" \
 	 --overwrite
 
-# Index stac files
 index-wapor-soil-moisture:
 	docker compose exec jupyter \
 	s3-to-dc-v2 s3://wapor-v3/wapor_soil_moisture/**/**.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	wapor_soil_moisture
 
-#  Copy stac files from s3
 copy-wapor_soil_moisture:
 	aws s3 cp --recursive --no-sign-request --include "*.json" --exclude "*.tif" \
 	s3://wapor-v3/wapor_soil_moisture/   \
@@ -114,15 +116,12 @@ create-esa-wordlcereal-stac:
 		--overwrite
 	make plot
 
-# Index stac files
 index-esa-wordlcereal:
 	docker compose exec jupyter \
 	s3-to-dc-v2 s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**/**/**.stac-item.json \
 	--no-sign-request --update-if-exists --allow-unsafe --stac \
 	esa_worldcereal_wintercereals
 
-mprof-plot:
-	mprof plot --output=mprof_plot_$(shell date +%Y-%m-%d_%H-%M-%S).png --flame
 
 ## Sentinel-3
 get-storage-parameters-s3_olci_l2_lfr:
@@ -156,12 +155,12 @@ copy-iwmi_blue_et_monthly:
 
 index-iwmi_blue_et_monthly:
 	docker compose exec jupyter \
-		s3-to-dc-v2 s3://iwmi-datasets/Water_accounting_plus/Africa/Incremental_ET_M/**.json \
+		s3-to-dc s3://iwmi-datasets/Water_accounting_plus/Africa/Incremental_ET_M/**.json \
 		--no-sign-request --update-if-exists --allow-unsafe --stac \
 		iwmi_blue_et_monthly
 
 index-iwmi_green_et_monthly:
 	docker compose exec jupyter \
-		s3-to-dc-v2 s3://iwmi-datasets/Water_accounting_plus/Africa/Rainfall_ET_M/**.json \
+		s3-to-dc s3://iwmi-datasets/Water_accounting_plus/Africa/Rainfall_ET_M/**.json \
 		--no-sign-request --update-if-exists --allow-unsafe --stac \
 		iwmi_green_et_monthly
