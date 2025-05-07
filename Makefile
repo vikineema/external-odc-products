@@ -83,46 +83,6 @@ copy-wapor_soil_moisture:
 	s3://wapor-v3/wapor_soil_moisture/   \
 	data/wapor_soil_moisture/
 
-## ESA WorldCereal
-download-esa-worldcereal-cogs:
-	esa-wordlcereal download-cogs \
-	--year="2021" \
-	--season="tc-wintercereals" \
-	--product="wintercereals" \
-	--output-dir=data/esa_worldcereal_sample/  \
-	--no-overwrite
-
-get-storage-parameters-esa_worldcereal_wintercereals-1:
-	get-storage-parameters \
-	--product-name=esa_worldcereal_wintercereals_classification \
-	--geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
-	--pattern=''.*classification\\.tif$' \
-	--output-dir="tmp/storage_parameters"
-
-get-storage-parameters-esa_worldcereal_wintercereals-2:
-	get-storage-parameters \
-	--product-name=esa_worldcereal_wintercereals_confidence \
-	--geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
-	--pattern=''.*confidence\\.tif$' \
-	--output-dir="tmp/storage_parameters"
-
-create-esa-wordlcereal-stac:
-	mprof run --include-children \
-    esa-wordlcereal create-stac-files \
-		--product-name="esa_worldcereal_wintercereals" \
-		--product-yaml="products/esa_worldcereal_wintercereals.odc-product.yaml" \
-		--geotiffs-dir="s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/" \
-		--stac-output-dir="data/esa_worldcereal_sample/" \
-		--overwrite
-	make plot
-
-index-esa-wordlcereal:
-	docker compose exec jupyter \
-	s3-to-dc-v2 s3://deafrica-data-dev-af/esa_worldcereal_sample/wintercereals/tc-wintercereals/**/**/**.stac-item.json \
-	--no-sign-request --update-if-exists --allow-unsafe --stac \
-	esa_worldcereal_wintercereals
-
-
 ## Sentinel-3
 get-storage-parameters-s3_olci_l2_lfr:
 	get-storage-parameters \

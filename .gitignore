@@ -1,19 +1,34 @@
-# Config files
-**/.cache/**
-**/.config/**
-**/.ipynb_checpoints/**
-**/.ipython/**
-**/.jupyter/**
-**/.local/**
+
+# Visual Studio Cache files
+*.cache/**
+# Jupyter metadata files
+*.config/**
+*.ipython/**
+*.jupyter/**
+*.local/**
+*.npm/**
+**/.ipynb_checkpoints/**
+# Bash files
+.bash_history
+# Dev containers files
+*.ssh/**
+*.vscode-server/**
+*.dotnet/**
+# Ignore items in data folder
+data/**
+# Python install files
 **/__pycache__/**
 **/*.egg-info/**
-# Ignore data storage
+# Memory profiler files
+core
+mprofile_*
+mprof_*
+# Ignore items in tmp folder
 tmp/**
-data/**
-# Credential files
-**/.env
-# Don't keep notebooks
+# Ignore items in notebooks folder
 notebooks/**
-# Ignore mprof outputs
-**/mprof*.png
-**/mprofile*.dat
+# Ignore items in data folder
+data/**
+# Ignore db backups
+dbbackups/**
+# Ignore 
